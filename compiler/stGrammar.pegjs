@@ -31,44 +31,24 @@
 */
 
 {
-/*
- [The "BSD licence"]
- Copyright (c) 2015, John Snyders
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions
- are met:
- 1. Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
- 2. Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
- 3. The name of the author may not be used to endorse or promote products
-    derived from this software without specific prior written permission.
-
- THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+    var VALID_DELIMITERS =  "#$%^&*<>";
 
     var delimiterStartChar = "<",
         delimiterStopChar = ">",
         curDict = null,
-        outside = true;
+        outside = true,
+        verbose = false,
+        formalArgsHasOptional = false;
 
-    if (options) {
-        delimiterStartChar = options.delimiterStartChar || "<";
-        delimiterStopChar = options.delimiterStopChar || ">";
+    var logger = function(message) {
+        console.log(message);
     }
-    console.log("xxx initial delimiters are " + delimiterStartChar + ", " + delimiterStopChar);
+
+    function verboseLog(message) {
+        if (verbose) {
+            logger(message);
+        }
+    }
 
     function makeList(first, rest) {
         var list;
@@ -84,6 +64,50 @@
         return list;
     }
 
+    // xxx get these from the runtime
+    var functions = ["first", "length", "strlen", "last", "rest", "reverse", "trunc", "strip", "trim"],
+        fnMap = {};
+    functions.forEach(function(fn) { fnMap[fn] = true; });
+
+    function isFunction(name) {
+        console.log("xxx is " + name + " a function?" + (name in fnMap));
+        return name in fnMap;
+    }
+
+    function parseTemplate(template) {
+        var ignoreNewLines = false, // xxx make use of this
+            lineOffset = line() - 1;
+
+        if (template.ignoreNewLines) {
+            ignoreNewLines = true;
+            template = template.string;
+        }
+        try {
+            return parse(template, {
+                startRule: "template",
+                verbose: verbose,
+                delimiterStartChar: delimiterStartChar,
+                delimiterStopChar: delimiterStopChar
+            });
+        } catch(ex) {
+            if (ex instanceof SyntaxError) {
+                ex.line += lineOffset;
+            }
+            throw ex;
+        }
+    }
+
+    if (options) {
+        delimiterStartChar = options.delimiterStartChar || "<";
+        delimiterStopChar = options.delimiterStopChar || ">";
+        verbose = options.verbose || false;
+        if (options.logger) {
+            logger = options.logger;
+        }
+    }
+
+    verboseLog("Initial delimiters: " + delimiterStartChar + ", " + delimiterStopChar);
+
 }
 
 /*
@@ -94,7 +118,7 @@
  * There should be at least one definition but not enforced
  */
 group
-    = delimiters? i:import* d:def* EOF {
+    = __ delimiters? __ i:import* __ d:def* __ EOF {
             return {
                 imports: i || null,
                 definitions: d || null
@@ -103,49 +127,78 @@ group
 
 import
     = __ "import" __ file:STRING __ {
-            console.log("xxx import file " + file.value);
+            return file.value;
         }
 
 delimiters
-    = __ "delimiters" __ s:STRING __ "," __ e:STRING {
-            // xxx validate chars and each are 1 char exactly
+    = "delimiters" __ s:STRING __ "," __ e:STRING {
+            var start = s.value,
+                stop = e.value;
+            if (start.length !== 1 || stop.length !== 1) {
+                error("Delimiter value must be exactly one character");
+            }
+            if (VALID_DELIMITERS.indexOf(start) < 0 || VALID_DELIMITERS.indexOf(stop) < 0) {
+                error("Invalid delimiter character");
+            }
             delimiterStartChar=s.value.charAt(0);
             delimiterStopChar=e.value.charAt(0);
-            console.log(" xxx delimiters are " + delimiterStartChar + ", " + delimiterStopChar);
+            verboseLog("Delimiters: " + delimiterStartChar + ", " + delimiterStopChar);
         }
 
 def
-    = templateDef
-    / dictDef
+    = __ d:dictDef __ { return d; }
+    / __ d:templateDef __ { return d; }
 
 templateDef
     = name:( "@" enclosing:ID "." n:ID "(" __ ")"
         /	n:ID "(" __ formalArgs __ ")"
         { return n; } )
         __ "::=" __
-        (	s:STRING
-        /	s:BIGSTRING
-        /	s:BIGSTRING_NO_NL
-        / { error("missing template"); }
+        template:(
+            s:STRING { return s.value }
+            / s:BIGSTRING { return s.value }
+            / s:BIGSTRING_NO_NL { return s.value }
+            / { error("missing template"); }
         ) {
-            console.log("xxx defined template " + name.value);
+            verboseLog("Template definition: " + name.value);
+            return {
+                type: "TEMPLATE",
+                name: name.value,
+                template: parseTemplate(template)
+            }
         }
-    / alias:ID __ '::=' __ target:ID  { console.log("xxx alias " + alias.value); }
+    / alias:ID __ '::=' __ target:ID  {
+            verboseLog("Template alias: " + name.value + " > " + target.value);
+            return {
+                type: "ALIAS",
+                alias: alias.value,
+                target: target.value
+            }
+        }
 
 formalArgs
-    = formalArg ( __ ',' __ formalArg)*
-    /
+    = &{ formalArgsHasOptional = false; return true; } first:formalArg rest:( __ ',' __ e:formalArg { return e; } )* {
+            return makeList(first, rest);
+        }
+    / { return []; }
 
 formalArg
-    = arg:ID
-        (	'=' defVal:(STRING /*xxx|ANONYMOUS_TEMPLATE*/ / 'true' / 'false') { console.log("xxx default value is " + defVal.value); }
-// xxx        |	'=' a='[' ']' {$formalArgs::hasOptionalParameter = true;}
-        / { error("Missing formal argument default value"); }
-        )
-        { console.log(" xxx arg " + arg.value); }
+    = name:ID defaultValue:( __ '=' __
+            (STRING /*xxx|ANONYMOUS_TEMPLATE*/ / TRUE / FALSE / "[" __ "]" { return []; /*xxx*/ } ) { formalArgsHasOptional = true; }
+        )? {
+                if (formalArgsHasOptional && defaultValue === null) {
+                    error("Required argument after optional not allowed.");
+                }
+                return {
+                    type: "FORMAL_ARG",
+                    name: name,
+                    value: defaultValue
+                 }
+            }
 
 dictDef
 	= (__ id:ID __ '::=' { curDict = { type: "DICTIONARY", name: id.value, map: {}, default: null }; }) dict {
+            verboseLog("Dictionary definition: " + curDict.name);
             return curDict;
         }
 
@@ -153,7 +206,7 @@ dict
 	= __ "[" __ dictPairs "]" __
 
 dictPairs
-    = __ first:keyValuePair (__ ',' __ rest:keyValuePair)* (__ ',' __ def:defaultValuePair)?
+    = __ keyValuePair (__ ',' __ keyValuePair)* (__ ',' __ defaultValuePair)?
     / __ def:defaultValuePair
 
 defaultValuePair
@@ -217,7 +270,7 @@ compoundElement
     / region
 
 exprTag
-	= START e:expr ( ';' opts:exprOptions )? STOP {
+	= START e:expr opts:( ';' o:exprOptions { return o; } )? STOP {
 	        return {
 	            type: "EXPR",
 	            expr: e,
@@ -279,7 +332,7 @@ notConditional
     / memberExpr
 
 exprOptions
-    = option ( ',' option )* // xxx
+    = option ( __ ',' __ option )* // xxx
 
 /*
 @init {
@@ -294,15 +347,15 @@ exprOptions
 }
 */
 option
-    = ID ( "=" exprNoComma )?
+    = ID ( __ "=" __ exprNoComma )?
 
 exprNoComma
-    = me:memberExpr ( ':' tr:mapTemplateRef )? {
-            if (tr) {
+    = me:memberExpr ref:( ':' tr:mapTemplateRef { return tr; } )? {
+            if (ref) {
                 return {
                     type: "MAP",
                     expr: me,
-                    template: tr
+                    template: ref
                 };
             } else {
                 return me;
@@ -351,27 +404,50 @@ mapTemplateRef
     / '(' mapExpr ')' '(' argExprList? ')' // xxx -> ^(INCLUDE_IND mapExpr argExprList?)
 
 memberExpr
-    = includeExpr ( '.' ID / '.' '(' mapExpr ')' )*
+    = e:includeExpr
+        props:( '.' prop:ID {
+                return {
+                    type: "PROP",
+                    property: prop.value
+                }
+            }
+        / '.' '(' e:mapExpr ')' {
+                return {
+                    type: "PROP_IND",
+                    property: e
+                }
+            }
+        )* {
+                if (props.length > 0) {
+                    return {
+                        type: "MEMBER_EXPR",
+                        object: e,
+                        properties: props
+                    }
+                } else {
+                    return e;
+                }
+            }
 
 includeExpr
-    = i:ID &{ return isFunction(i.value); } '(' e:expr? ')' {
+    = i:ID &{ return isFunction(i.value); } __ '(' __ e:expr? __ ')' {
             return {
                 type: "FUNCTION",
-                name: i,
+                name: i.value,
                 arg: e
             };
         }
     / "super." i:ID '(' a:args ')' {
             return {
                 type: "INCLUDE_SUPER",
-                name: i,
+                name: i.value,
                 args: a
             };
         }
     / i:ID '(' a:args ')' {
              return {
                  type: "INCLUDE",
-                 name: i,
+                 name: i.value,
                  args: a
              };
          }
@@ -380,10 +456,14 @@ includeExpr
     / primary
 
 primary
-    = TRUE
-    / FALSE
-    / ID
-    / STRING
+    = TRUE { return true; }
+    / FALSE { return false; }
+    / i:ID { return {
+                type: "ATTRIBUTE",
+                name: i.value
+            }
+        }
+    / s:STRING { return s.value }
     / subtemplate
     / list
 //xxx    |	{$conditional.size()>0}?=>  '('! conditional ')'!
@@ -423,10 +503,10 @@ namedArg
         }
 
 list
-    = "[" __ first:listElement? ( __ "," __ rest:listElement )* __ "]" {
+    = "[" __ first:listElement? rest:( __ "," __ i:listElement { return i; } )* __ "]" {
             return {
                 type: "LIST",
-                value: makeList(fist, rest)
+                value: makeList(first, rest)
             };
         }
 
@@ -464,7 +544,10 @@ ID	"identifier"
 	        };
 	    }
 
-// xxx ST seems to allow some of these in some contexts
+/*
+ * According to the doc these are all "reserved words" but the Java ST parser seems to allow some in some contexts
+ * true, false, import, default, key, group, implements, first, last, rest, trunc, strip, trim, length, strlen, reverse, if, else, elseif, endif, delimiters
+ */
 RESERVED
     = "true"
     / "false"
@@ -473,6 +556,14 @@ RESERVED
     / "elseif"
     / "endif"
     / "super"
+    / "import"
+    / "default"
+    / "key"
+    / "group"
+    / "delimiters"
+// This is old v3 keyword so allow it
+//    / "implements"
+// The functions need to be included as identifiers because they are tested to be functions later
 
 TRUE
     = "true" { return { type: "TRUE" }; }
@@ -543,48 +634,82 @@ INDENT
 
 START
     = &{return outside;} !( START_CHAR "!") START_CHAR {
-            console.log("xxx found start");
             outside = false;
             return { type: "START" };
         }
-
+/*
+ * Character that starts an expression. This is configurable. Typically < or $
+ */
 START_CHAR
     = &{ return (input.charAt(peg$currPos) === delimiterStartChar) } .
 
+/*
+ * <! comment !>
+ */
 ST_COMMENT
     = &{return outside;} START_CHAR "!" (!("!" STOP_CHAR) .)* "!" STOP_CHAR {
             return { type: "ST_COMMENT" };
         }
-
+/*
+ * Any text outside an expression except for new lines
+ * text returned as is except for escapes
+ */
 TEXT
-    = &{return outside;} TEXT_CHAR+ {
+    = &{return outside;} chars:TEXT_CHAR+ {
             return {
                 type: "TEXT",
-                value: text()
+                value: chars.join("") // can't use text() unless it fixes up escapes
             };
         }
 
+// xxx something about RCURLY needed
 TEXT_CHAR
-    = !(EOL / START_CHAR / "\\" START_CHAR) . {
+    = !(EOL / START_CHAR / "\\" START_CHAR / "\\\\" / ESCAPE) . {
             return text();
         }
     / "\\" START_CHAR { return delimiterStartChar; }
+    / START_CHAR !("\\\\") e:ESCAPE* STOP_CHAR { return e.join(""); }
+    / START_CHAR "\\\\" STOP_CHAR WS_CHAR* EOL ch:.? { return ch; }
+
+
+/*
+ * \< or \> -> < or >
+ * <\ >, <\n>, <\t>, <\r> -> space, line feed, tab, carriage return  - can have multiple
+ * <\uXXXX> -> Unicode character - can have multiple
+ * <\\> ([ \t])*(\r|\r\n|\n). -> .  // ignores new line
+ */
+ESCAPE
+    = "\\" ch:( "u" HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT { return String.fromCharCode(parseInt(text().substr(1), 16)); }
+        / "n" { return "\n"; }
+        / "r" { return "\r"; }
+        / "t" { return "\t"; }
+        / " " { return " "; }
+        / . {
+                error("Invalid escape character '" + text() + "'");
+            }
+        ) { return ch; }
+
+HEX_DIGIT
+    = [0-9a-fA-F]
 
 NEWLINE
     = &{return outside;} EOL {
-            console.log("xxx found new line");
             return {
                 type: "NEWLINE",
                 value: text()
             }
         }
 
+/*
+ * INSIDE
+ */
 STOP "stop delimiter"
     = !{return outside;} STOP_CHAR {
-            console.log("xxx found stop");
             outside = true;
             return { type: "STOP" };
         }
-
+/*
+ * Character that stops an expression. This is configurable. Typically > or $
+ */
 STOP_CHAR
     = &{ return (input.charAt(peg$currPos) === delimiterStopChar) } .

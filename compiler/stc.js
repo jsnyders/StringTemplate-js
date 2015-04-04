@@ -38,6 +38,7 @@ function compileGroupFile(file, encoding, delimiterStartChar, delimiterStopChar)
     try {
         var result = parser.parse(text, {
             startRule: "group",
+            verbose: true,
             delimiterStartChar: delimiterStartChar,
             delimiterStopChar: delimiterStopChar
         });
@@ -73,6 +74,12 @@ function main() {
         .default("raw", false)
         .boolean("r")
         .describe("raw", "Template files with no declarations (raw).")
+        .option("v", {
+            alias: "verbose",
+            default: false,
+            type: "boolean",
+            describe: "Log output about what the compiler is doing"
+        })
         .usage("Usage: $0 [options] input-path")
         .wrap(78)
         .version(version, "version")
@@ -81,7 +88,7 @@ function main() {
         .alias("help", "h")
         .argv;
 
-    compileGroupFile(argv._[0]);
+    compileGroupFile(argv._[0], argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
 }
 
 module.exports = {
