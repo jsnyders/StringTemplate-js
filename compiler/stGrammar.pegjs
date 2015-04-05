@@ -35,6 +35,7 @@
 
     var delimiterStartChar = "<",
         delimiterStopChar = ">",
+        curGroup = options.group,
         curDict = null,
         outside = true,
         verbose = false,
@@ -64,16 +65,6 @@
         return list;
     }
 
-    // xxx get these from the runtime
-    var functions = ["first", "length", "strlen", "last", "rest", "reverse", "trunc", "strip", "trim"],
-        fnMap = {};
-    functions.forEach(function(fn) { fnMap[fn] = true; });
-
-    function isFunction(name) {
-        console.log("xxx is " + name + " a function?" + (name in fnMap));
-        return name in fnMap;
-    }
-
     function parseTemplate(template) {
         var ignoreNewLines = false, // xxx make use of this
             lineOffset = line() - 1;
@@ -82,9 +73,12 @@
             ignoreNewLines = true;
             template = template.string;
         }
+
+        outside = true; // just in case, make sure always start parsing a template on the outside
         try {
             return parse(template, {
-                startRule: "template",
+                startRule: "templateAndEOF",
+                group: curGroup,
                 verbose: verbose,
                 delimiterStartChar: delimiterStartChar,
                 delimiterStopChar: delimiterStopChar
@@ -97,13 +91,11 @@
         }
     }
 
-    if (options) {
-        delimiterStartChar = options.delimiterStartChar || "<";
-        delimiterStopChar = options.delimiterStopChar || ">";
-        verbose = options.verbose || false;
-        if (options.logger) {
-            logger = options.logger;
-        }
+    delimiterStartChar = options.delimiterStartChar || "<";
+    delimiterStopChar = options.delimiterStopChar || ">";
+    verbose = options.verbose || false;
+    if (options.logger) {
+        logger = options.logger;
     }
 
     verboseLog("Initial delimiters: " + delimiterStartChar + ", " + delimiterStopChar);
@@ -115,19 +107,20 @@
  */
 
 /*
+ * ENTRY POINT: group
+ * This entry point is for a .stg file.
+ *
  * There should be at least one definition but not enforced
  */
 group
-    = __ delimiters? __ i:import* __ d:def* __ EOF {
-            return {
-                imports: i || null,
-                definitions: d || null
-            };
+    = __ delimiters? __ import* __ def* __ EOF {
+            return curGroup;
         }
 
 import
     = __ "import" __ file:STRING __ {
-            return file.value;
+            curGroup.addImports(file.value);
+            return null;
         }
 
 delimiters
@@ -143,16 +136,31 @@ delimiters
             delimiterStartChar=s.value.charAt(0);
             delimiterStopChar=e.value.charAt(0);
             verboseLog("Delimiters: " + delimiterStartChar + ", " + delimiterStopChar);
+            return null;
         }
 
 def
-    = __ d:dictDef __ { return d; }
+    = __ d:dictDef __ { return d }
     / __ d:templateDef __ { return d; }
 
+/*
+ * ENTRY POINT: templateDef
+ * This entry point is for a non-raw .st file
+ * xxx also used internally as part of a group definition
+ *   when used for a .st file is region or alias really allowed? Also only in that case need to enforce name and filename match
+ *   also when used as the .st entry point need to allow whitespace prolog and epilog
+ */
 templateDef
-    = name:( "@" enclosing:ID "." n:ID "(" __ ")"
-        /	n:ID "(" __ formalArgs __ ")"
-        { return n; } )
+    = def:( "@" enclosing:ID "." n:ID "(" __ ")" {
+                    return { type: "xxx" }; // todo region stuff
+                }
+            /	n:ID "(" __ args:formalArgs __ ")" {
+                    return {
+                        name: n.value,
+                        args: args
+                    };
+                }
+        )
         __ "::=" __
         template:(
             s:STRING { return s.value }
@@ -160,20 +168,15 @@ templateDef
             / s:BIGSTRING_NO_NL { return s.value }
             / { error("missing template"); }
         ) {
-            verboseLog("Template definition: " + name.value);
-            return {
-                type: "TEMPLATE",
-                name: name.value,
-                template: parseTemplate(template)
-            }
+            verboseLog("Template definition: " + def.name);
+            def.template = parseTemplate(template).value;
+            curGroup.addTemplate(def);
+            return null;
         }
     / alias:ID __ '::=' __ target:ID  {
             verboseLog("Template alias: " + name.value + " > " + target.value);
-            return {
-                type: "ALIAS",
-                alias: alias.value,
-                target: target.value
-            }
+            curGroup.addTemplateAlias(alias.value, target.value);
+            return null;
         }
 
 formalArgs
@@ -184,22 +187,36 @@ formalArgs
 
 formalArg
     = name:ID defaultValue:( __ '=' __
-            (STRING /*xxx|ANONYMOUS_TEMPLATE*/ / TRUE / FALSE / "[" __ "]" { return []; /*xxx*/ } ) { formalArgsHasOptional = true; }
+            v:( s:STRING {return s.value;}
+                /*xxx|ANONYMOUS_TEMPLATE*/
+                / TRUE { return true; }
+                / FALSE { return false; }
+                / "[" __ "]" { return []; } ) {
+                        formalArgsHasOptional = true;
+                        return v;
+                    }
         )? {
+                var ret;
+
                 if (formalArgsHasOptional && defaultValue === null) {
                     error("Required argument after optional not allowed.");
                 }
-                return {
+                ret = {
                     type: "FORMAL_ARG",
-                    name: name,
-                    value: defaultValue
-                 }
+                    name: name.value,
+                };
+                if (defaultValue) {
+                    ret.defaultValue = defaultValue;
+                }
+                return ret;
             }
 
 dictDef
-	= (__ id:ID __ '::=' { curDict = { type: "DICTIONARY", name: id.value, map: {}, default: null }; }) dict {
+	= (__ id:ID __ '::=' { curDict = { name: id.value, map: {}, default: null }; }) dict {
             verboseLog("Dictionary definition: " + curDict.name);
-            return curDict;
+            curGroup.addDictionary(curDict);
+            curDict = null;
+            return null;
         }
 
 dict
@@ -237,8 +254,32 @@ anonymousTemplate
 /*
  * RAW TEMPLATE
  */
+
+/*
+ * ENTRY POINT: templateAndEOF
+ * This entry point is used internally to parse the body of a template definition
+ */
+templateAndEOF
+    = t:template EOF {
+            return t;
+        }
+
+/*
+ * ENTRY POINT: templateRaw
+ * This entry point is for raw .st files
+ */
+templateRaw
+    = t:template EOF {
+            curGroup.addTemplate({
+                name: curGroup.fileName,
+                args: null, // xxx is this OK?
+                templatet: t.value
+            });
+            return curGroup;
+        }
+
 template
-    = e:element* EOF { return {
+    = e:(!(INDENT? START_CHAR "elseif" / INDENT? START_CHAR "else" / INDENT? START_CHAR "endif" ) i:element { return i; })* { return {
                 type: "TEMPLATE",
                 value: e || null // xxx should this be null or text token with empty string value
             }
@@ -252,10 +293,10 @@ element
                 value: se
             };
         }
-    / se:singleElement {
+    / &{ outside=true; return true } se:singleElement {
             return se;
         }
-    / ce:compoundElement {
+    / &{ outside=true; return true } ce:compoundElement {
             return ce;
         }
 
@@ -271,13 +312,17 @@ compoundElement
 
 exprTag
 	= START e:expr opts:( ';' o:exprOptions { return o; } )? STOP {
-	        return {
+	        var ret = {
 	            type: "EXPR",
-	            expr: e,
-	            options: opts
+	            expr: e
 	        };
+	        if (opts) {
+	            ret.options = opts;
+	        }
+	        return ret;
         }
 
+// xxx todo region stuff
 region
     = INDENT? START '@' ID STOP template INDENT? START '@end' STOP
 
@@ -306,13 +351,16 @@ formalArgsNoDefault
         }
 
 ifstat
-	= i:INDENT? START 'if' '(' c1:conditional ')' STOP /*xxx{if (input.LA(1)!=NEWLINE) indent=$i;} */
+	= i:INDENT? START "if" __ "(" __ c1:conditional __ ")" STOP /*xxx{if (input.LA(1)!=NEWLINE) indent=$i;} */
         t1:template
-        ( INDENT? START 'elseif' '(' c2:conditional ')' STOP t2:template )* // xxx how to gather all the t2s?
-        ( INDENT? START 'else' STOP t3:template )?
-        INDENT? START 'endif' STOP {
+        ( !(INDENT? START_CHAR "else" STOP_CHAR) INDENT? START "elseif" __ "(" __ c2:conditional __ ")" STOP t2:template )* // xxx how to gather all the t2s?
+        ( INDENT? START "else" STOP t3:template )?
+        INDENT? START "endif" STOP {
                 return {
-                    type: "IF"
+                    type: "IF",
+                    condition: c1,
+                    then: t1
+                    // xxx what else
                 };
             }
 /*xxx		// kill \n for <endif> on line by itself if multi-line IF
@@ -322,17 +370,19 @@ ifstat
 		->                    ^('if' $c1 $t1? ^('elseif' $c2 $t2)* ^('else' $t3?)?) */
 
 conditional
-    = andConditional ( "||" andConditional )*
+    = andConditional ( __ "||" __ andConditional )*
 
 andConditional
-    = notConditional ( "&&" notConditional )*
+    = notConditional ( __ "&&" __ notConditional )*
 
 notConditional
-    = "!" notConditional
+    = "!" __ notConditional
     / memberExpr
 
 exprOptions
-    = option ( __ ',' __ option )* // xxx
+    = first:option rest:( __ ',' __ o:option { return o; } )* {
+            return makeList(first, rest);
+        }
 
 /*
 @init {
@@ -347,7 +397,22 @@ exprOptions
 }
 */
 option
-    = ID ( __ "=" __ exprNoComma )?
+    = name:ID val:( __ "=" __ e:exprNoComma { return e; } )? {
+            var optionName = name.value,
+                value;
+            if (!curGroup.isValidOption(optionName)) {
+                error("No such option " + optionName);
+            }
+            value = val || curGroup.defaultOptionValue(optionName);
+            if (!value) {
+                error("Value required for option " + optionName);
+            }
+            return {
+                type: "OPTION",
+                name: optionName,
+                value: value
+            };
+        }
 
 exprNoComma
     = me:memberExpr ref:( ':' tr:mapTemplateRef { return tr; } )? {
@@ -388,9 +453,26 @@ mapExpr
         )*
 */
 
+/*
+ *
+ */
 mapExpr
-    = memberExpr ( ( __ "," __ memberExpr )+ __ ":" __ mapTemplateRef )?
-          ( ":" __ mapTemplateRef ( __ "," __ mapTemplateRef )*  )*
+    = m1:memberExpr zip:( ( __ "," __ memberExpr )+ __ ":" __ mapTemplateRef )?
+        map:( ":" __ mapTemplateRef ( __ "," __ mapTemplateRef )*  )* {
+                if (zip) {
+                    return {
+                        type: "ZIP"
+                        //xxx
+                    };
+                } else if (map.length > 0) {
+                    return {
+                        type: "MAP"
+                        //xxx
+                    };
+                } else {
+                    return m1;
+                }
+            }
 
 /**
 expr:template(args)  apply template to expr
@@ -403,6 +485,16 @@ mapTemplateRef
     / subtemplate
     / '(' mapExpr ')' '(' argExprList? ')' // xxx -> ^(INCLUDE_IND mapExpr argExprList?)
 
+/*
+ * <attribute.property> // value of property of object attribute
+ * <attribute.property.property> // any number of levels of property references
+ * <attribute.(expr)> // indirect property reference. value of expr is name of property of object attribute
+ * <attribute.(expr).(expr)> // any number of levels allowed
+ * <attribute.property.(expr). // can mix direct and indirect property references
+ * xxx it seems strange that member references are allowed on anything other than an attribute
+ *  what does true.myProp mean?
+ *  or template(arg1, arg2).prop2
+ */
 memberExpr
     = e:includeExpr
         props:( '.' prop:ID {
@@ -428,16 +520,23 @@ memberExpr
                     return e;
                 }
             }
-
+/*
+ * <func(expr)> // func is one of the built in functions: first, length, strlen, last, rest, reverse, trunc, strip, trim
+ * xxx super?
+ * <template(exp1, exp2...)>
+ * <template(formalArg1=exp1, formalArg2=exp2...)>
+ * xxx
+ * Or primary
+ */
 includeExpr
-    = i:ID &{ return isFunction(i.value); } __ '(' __ e:expr? __ ')' {
+    = i:ID &{ return curGroup.isFunction(i.value); } __ '(' __ e:expr? __ ')' {
             return {
                 type: "FUNCTION",
                 name: i.value,
                 arg: e
             };
         }
-    / "super." i:ID '(' a:args ')' {
+    / "super." i:ID '(' a:args ')' { // xxx todo region stuff
             return {
                 type: "INCLUDE_SUPER",
                 name: i.value,
@@ -451,17 +550,25 @@ includeExpr
                  args: a
              };
          }
+// xxx todo region stuff
 //xxx	|	'@' 'super' '.' ID '(' rp=')'			-> ^(INCLUDE_SUPER_REGION ID)
 //xxx	|	'@' ID '(' rp=')'						-> ^(INCLUDE_REGION ID)
     / primary
 
+/*
+ * true
+ * false
+ * <attriburte>
+ * "string"
+ * xxx
+ */
 primary
     = TRUE { return true; }
     / FALSE { return false; }
     / i:ID { return {
                 type: "ATTRIBUTE",
                 name: i.value
-            }
+            };
         }
     / s:STRING { return s.value }
     / subtemplate
@@ -474,16 +581,26 @@ primary
 
 args
     = argExprList?
-	/ first:namedArg ( __ ',' __ rest:namedArg )* (__ ',' __ pt:'...')? {
-	        return {
+	/ first:namedArg rest:( __ ',' __ a:namedArg { return a; } )* passThrough:( __ ',' __ pt:'...' { return true; })? {
+	        var ret = {
                 type: "ARGS",
-                value: makeList(first, rest), // xxx what to do with pt?
+                value: makeList(first, rest)
 	        };
+	        if (passThrough) {
+	            ret.passThrough = true;
+	        }
+	        return ret;
 	    }
-    / '...' { return { type: "PASSTHROUGH" }; }
+    / '...' {
+            return {
+                type: "ARGS",
+                value: [],
+                passThrough: true
+            };
+        }
 
 argExprList
-    = first:arg ( __ ',' __ rest:arg )* {
+    = first:arg rest:( __ ',' __ a:arg { return a; } )* {
             return {
                 type: "ARGS",
                 value: makeList(first, rest)
@@ -536,6 +653,9 @@ LINE_COMMENT
 __ "white space"
     = (WS_CHAR / EOL / COMMENT / LINE_COMMENT )*
 
+/*
+ * xxx when defining a template / is not allowed but in a template when referencing a template it is.
+ */
 ID	"identifier"
 	= !(RESERVED) [a-zA-Z_/] [a-zA-Z_/0-9]* {
 	        return {
