@@ -43,7 +43,13 @@ exprOptions.forEach(function(opt) { exprOptionsMap[opt] = true; });
 
 var groupPrototype = {
     addTemplate: function (def) {
-        this.templates[def.name] = def;
+        var name = this.groupFolder + "/" + def.name;
+        this.templates[name] = def;
+        return null;
+    },
+    addRegion: function (def) {
+        var name = "@" + def.enclosingTemplate + "." + def.name;
+        this.templates[name] = def;
         return null;
     },
     addTemplateAlias: function(alias, target) {

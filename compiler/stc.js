@@ -27,7 +27,9 @@
  */
 /*
  * stc.js - StringTemplate Compiler
- * xxx
+ * Commandline program that takes a group of StringTemplate source files
+ * and writes a JavaScript module that implements the template at runtime.
+ * Also exports callable functions to do the same from another program.
  */
 var fs = require("fs"),
     path = require("path"),
@@ -37,52 +39,102 @@ var fs = require("fs"),
 
 var VERSION = "0.1";
 
-var gVerbose = false;
+var gVerbose = false,
+    gOutputAST = false;
 
+/**
+ * xxx
+ * @param v
+ */
 function setVerbose(v) {
     gVerbose = v;
 }
 
-function getFileReader(baseDir, encoding) {
+// xxx getter?
 
+/**
+ * xxx
+ * @param o
+ */
+function setOutputAST(o) {
+    gOutputAST = o;
+}
+
+// xxx getter?
+
+function fatalIOError(ex, file) {
+    if (ex.code === "ENOENT") {
+        console.log("Error: No such file or directory '" + file + "'.");
+    } else if (ex.code === "EACCES") {
+        console.log("Error: Permission denied to access '" + file + "'.");
+    } else {
+        console.log(ex.message);
+    }
+    process.exit(1);
+}
+
+function logParserError(file, ex) {
+    if (ex.name === "SyntaxError") {
+        console.log("Error: " + file + "(" + ex.line + "," + ex.column + "): " + ex.message);
+    } else {
+        console.log(" Error: " + file + ": " + ex);
+    }
+}
+
+function startRule(ext, raw) {
+    if (ext === stGroup.GROUP_FILE_EXTENSION) {
+        return "groupFile";
+    } else if (raw) {
+        return "templateFileRaw";
+    }// else
+    return "templateFile";
+}
+
+function getFileReader(baseDir, encoding) {
     var readFile = function(file) {
         var text;
 
-        // files, if not absolute, are relative to the give base dir
-        // xxx
+        // files, if not absolute, are relative to the given base dir
+        // todo need newer version of node for this: path.isAbsolute(baseDir)
         if (file.substring(0,1) !== "/") {
             file = path.join(baseDir, file);
         }
-        text = fs.readFileSync(file, {encoding: encoding});
+        try {
+            text = fs.readFileSync(file, {encoding: encoding});
+        } catch (ex) {
+            fatalIOError(ex, file);
+        }
         return text;
     };
     return readFile;
 }
 
-function parseFile(file, options) {
-    var text = options.readFile(file);
+function parseFile(file, writer, options) {
+    var group = options.group,
+        text = options.readFile(file);
+
     try {
-        var result = parser.parse(text, options);
-        console.log(JSON.stringify(result, null, 4));
+        parser.parse(text, options);
     } catch (ex) {
-        console.log("Error ", ex);
+        logParserError(file, ex);
+        return;
     }
+    generate(group, writer);
 }
 
-function compileGroupFile(file, encoding, delimiterStartChar, delimiterStopChar) {
+function compileGroupFile(file, writer, encoding, delimiterStartChar, delimiterStopChar) {
     var baseDir = path.dirname(file),
         ext = path.extname(file);
 
     encoding = encoding || "utf8";
 
-    // xxx need newer version of node for this: path.isAbsolute(baseDir)
+    // todo need newer version of node for this: path.isAbsolute(baseDir)
     if (baseDir.substring(0,1) !== "/") {
         baseDir = path.join(process.cwd(), baseDir);
         file = path.join(process.cwd(), file);
     }
-    console.log("xxx base dir " + baseDir);
-    parseFile(file, {
-        startRule: "group",
+    parseFile(file, writer, {
+        startRule: startRule(ext, false),
         readFile: getFileReader(baseDir, encoding), // xxx perhaps reader goes in group?
         group: makeGroup("", path.basename(file, ext)),
         verbose: gVerbose,
@@ -91,71 +143,126 @@ function compileGroupFile(file, encoding, delimiterStartChar, delimiterStopChar)
     });
 }
 
-function parseDir(rootDir, options) {
-    var group, folder;
+function parseDir(rootDir, writer, options) {
+    var group,
+        errorCount = 0;
 
-    function processDir(dir) {
-        var i, files, file, ext, folder, text;
+    function processDir(relDir, dir) {
+        var i, files, file, ext, stat, relFile, filePath, text;
 
         files = fs.readdirSync(dir);
         for (i = 0; i < files.length; i++) {
             file = files[i];
             ext = path.extname(file);
-            if (ext === stGroup.TEMPLATE_FILE_EXTENSION) {
-                console.log("xxx file: " + files[i]);
 
-                text = options.readFile(path.join(dir, file));
-                group.fileName = file;
-                // xxx group folder too
-                try {
-                    parser.parse(text, options);
-                    console.log(JSON.stringify(result, null, 4));
-                } catch (ex) {
-                    console.log("Error ", ex);
+            relFile = path.join(relDir, file);
+            filePath = path.join(dir, file);
+            try {
+                stat = fs.statSync(filePath);
+            } catch (ex) {
+                fatalIOError(ex, filePath);
+            }
+            if (stat.isDirectory()) {
+                if (gVerbose) {
+                    console.log("Processing group sub folder '" + relFile + "'...");
+                }
+                processDir(relFile, filePath);
+            } else if (ext === stGroup.TEMPLATE_FILE_EXTENSION || ext === stGroup.GROUP_FILE_EXTENSION) {
+                if (gVerbose) {
+                    console.log("Processing file '" + relFile + "'...");
                 }
 
+                text = options.readFile(relFile);
+                group.groupFolder = relDir;
+                group.fileName = path.basename(file, ext);
+                options.startRule = startRule(ext, group.raw);
+                try {
+                    parser.parse(text, options);
+                } catch (ex) {
+                    logParserError(relFile, ex);
+                    errorCount += 1;
+                }
+                // xxx when, where to process imports
             }
         }
     }
 
+    if (gVerbose) {
+        console.log("Processing group folder '" + rootDir + "'...");
+    }
     group = options.group;
-    processDir(rootDir);
-
-    return group;
+    processDir("", rootDir);
+    if (errorCount === 0) {
+        generate(group, writer);
+    }
 }
 
-function compileGroupDir(dir, encoding, delimiterStartChar, delimiterStopChar) {
+/**
+ * xxx
+ * @param dir
+ * @param writer
+ * @param encoding
+ * @param delimiterStartChar
+ * @param delimiterStopChar
+ */
+function compileGroupDir(dir, writer, encoding, delimiterStartChar, delimiterStopChar) {
     var group, parseOptions;
 
     encoding = encoding || "utf8";
 
     group = makeGroup("", "", false);
     parseOptions = {
-        startRule: "templateDef",
         readFile: getFileReader(dir, encoding), // xxx perhaps reader goes in group?
         group: group,
         verbose: gVerbose,
         delimiterStartChar: delimiterStartChar,
         delimiterStopChar: delimiterStopChar
     };
-    parseDir(dir, parseOptions);
+    parseDir(dir, writer, parseOptions);
 }
 
-function compileRawGroupDir(dir, encoding, delimiterStartChar, delimiterStopChar) {
+/**
+ * xxx
+ * @param dir
+ * @param writer
+ * @param encoding
+ * @param delimiterStartChar
+ * @param delimiterStopChar
+ */
+function compileRawGroupDir(dir, writer, encoding, delimiterStartChar, delimiterStopChar) {
     var group, parseOptions;
 
     encoding = encoding || "utf8";
 
     group = makeGroup("", "", true);
     parseOptions = {
-        startRule: "templateRaw",
         readFile: getFileReader(dir, encoding), // xxx perhaps reader goes in group?
         group: group,
         verbose: gVerbose,
         delimiterStartChar: delimiterStartChar,
         delimiterStopChar: delimiterStopChar
     };
-    parseDir(dir, parseOptions);
+    parseDir(dir, writer, parseOptions);
+}
+
+function outputAST(groupAST, writer) {
+    writer.write(JSON.stringify(groupAST, null, 4));
+}
+
+function generate(groupAST, writer) {
+    if (gOutputAST) {
+        outputAST(groupAST, writer);
+    }
+    // xxx generate
+}
+
+/*
+ * xxx this is a temp hack
+ */
+var tempWriter = {
+    write: function(text) {
+        console.log(text);
+    }
 }
 
 function main() {
@@ -195,33 +302,48 @@ function main() {
         .strict()
         .help("help", "Display usage")
         .alias("help", "h")
+        .check(function(args) {
+            if (args.delimiters.length !== 2) {
+                throw "Error: delimiters option must be exactly two characters.";
+            }
+            return true;
+        })
         .argv;
+
+    // xxx output file options -o file.js default stdout
+    // option to output ast (what is dumped currently) use output file with .json extension
 
     var ext, stat,
         inputPath = argv._[0];
 
+    setVerbose(argv.verbose);
+    setOutputAST(true); // todo take this from an option
+
+    if (argv.verbose) {
+        console.log("StringTemplate compiler version " + VERSION);
+    }
+
     try {
         stat = fs.statSync(inputPath);
     } catch (ex) {
-        console.log(ex.message);
-        process.exit(1);
+        fatalIOError(ex, inputPath);
     }
-
-    setVerbose(argv.verbose);
 
     if (stat.isDirectory()) {
         if (argv.raw) {
-            compileRawGroupDir(inputPath, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
+            compileRawGroupDir(inputPath, tempWriter, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
         } else {
-            compileGroupDir(inputPath, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
+            compileGroupDir(inputPath, tempWriter, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
         }
     } else {
+        if (argv.raw) {
+            console.log("Warning: raw option ignored when compiling a single file.");
+        }
         ext = path.extname(inputPath);
         if (ext === stGroup.GROUP_FILE_EXTENSION) {
-            compileGroupFile(inputPath, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
+            compileGroupFile(inputPath, tempWriter, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
         } else if (ext === stGroup.TEMPLATE_FILE_EXTENSION) {
-            // xxx create a group from a single template file? How to handle raw flag?
-            compileGroupFile(inputPath, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
+            compileGroupFile(inputPath, tempWriter, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
         }
     }
 }
@@ -230,7 +352,8 @@ module.exports = {
     compileGroupFile: compileGroupFile,
     compileGroupDir: compileGroupDir,
     compileRawGroupDir: compileRawGroupDir,
-    setVerbose: setVerbose
+    setVerbose: setVerbose,
+    setOutputAST: setOutputAST
 };
 
 if (require.main === module) {

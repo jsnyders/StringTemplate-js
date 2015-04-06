@@ -1,8 +1,4 @@
 /*
- * stGrammar.pegjs
- * This is the grammar for StringTemplate including group files, template files, and raw templates
- */
-/*
  [The "BSD licence"]
  Copyright (c) 2015, John Snyders
  All rights reserved.
@@ -29,6 +25,13 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+/*
+ * stGrammar.pegjs
+ * This is the grammar for StringTemplate including group files, template files, and raw templates
+ * current command to compile this is:
+ *    pegjs --allowed-start-rules groupFile,templateFile,templateFileRaw,templateAndEOF stGrammar.pegjs
+
+ */
 
 {
     var VALID_DELIMITERS =  "#$%^&*<>";
@@ -79,6 +82,7 @@
             return parse(template, {
                 startRule: "templateAndEOF",
                 group: curGroup,
+                nested: true,
                 verbose: verbose,
                 delimiterStartChar: delimiterStartChar,
                 delimiterStopChar: delimiterStopChar
@@ -98,7 +102,9 @@
         logger = options.logger;
     }
 
-    verboseLog("Initial delimiters: " + delimiterStartChar + ", " + delimiterStopChar);
+    if (!options.nested) {
+        verboseLog("Default delimiters: " + delimiterStartChar + ", " + delimiterStopChar);
+    }
 
 }
 
@@ -107,12 +113,12 @@
  */
 
 /*
- * ENTRY POINT: group
+ * ENTRY POINT: groupFile
  * This entry point is for a .stg file.
  *
  * There should be at least one definition but not enforced
  */
-group
+groupFile
     = __ delimiters? __ import* __ def* __ EOF {
             return curGroup;
         }
@@ -140,19 +146,26 @@ delimiters
         }
 
 def
-    = __ d:dictDef __ { return d }
-    / __ d:templateDef __ { return d; }
+    = __ dictDef __ { return null; }
+    / __ templateDef __ { return null; }
 
 /*
- * ENTRY POINT: templateDef
- * This entry point is for a non-raw .st file
- * xxx also used internally as part of a group definition
- *   when used for a .st file is region or alias really allowed? Also only in that case need to enforce name and filename match
- *   also when used as the .st entry point need to allow whitespace prolog and epilog
+ * Template and region definitions and template aliases
+ *  name(args) ::= << template body >> // multi-line template
+ *  name(args) ::= <% template body %> // multi-line template new lines not significant
+ *  name(args) ::= "template body" // single line template
+ *  aliasName ::= templateName
+ *  @enclosingTemplate.regionName() ::= << template body >>
+ *  @enclosingTemplate.regionName() ::= <% template body %>
+ *  @enclosingTemplate.regionName() ::= " template body "
  */
 templateDef
     = def:( "@" enclosing:ID "." n:ID "(" __ ")" {
-                    return { type: "xxx" }; // todo region stuff
+                    // todo region stuff
+                    return {
+                        name: n.value,
+                        enclosingTemplate: enclosing.value
+                    };
                 }
             /	n:ID "(" __ args:formalArgs __ ")" {
                     return {
@@ -166,11 +179,17 @@ templateDef
             s:STRING { return s.value }
             / s:BIGSTRING { return s.value }
             / s:BIGSTRING_NO_NL { return s.value }
-            / { error("missing template"); }
+            / { error("Missing template"); }
         ) {
-            verboseLog("Template definition: " + def.name);
-            def.template = parseTemplate(template).value;
-            curGroup.addTemplate(def);
+            if (def.enclosingTemplate) {
+                verboseLog("Region definition: " + def.enclosingTemplate + "." + def.name);
+                def.template = parseTemplate(template).value;
+                curGroup.addRegion(def);
+            } else {
+                verboseLog("Template definition: " + def.name);
+                def.template = parseTemplate(template).value;
+                curGroup.addTemplate(def);
+            }
             return null;
         }
     / alias:ID __ '::=' __ target:ID  {
@@ -252,6 +271,36 @@ anonymousTemplate
         }
 
 /*
+ * TEMPLATE FILE
+ */
+/*
+ * ENTRY POINT: templateFile
+ * This entry point is for a non-raw .st file
+ * Testing with Java reference implementation shows that region and alias definitions are not useful in .st files
+ * even though they are allowed while parsing.
+ */
+templateFile
+    = __ name:ID "(" __ args:formalArgs __ ")"
+        __ "::=" __
+        template:(
+            s:STRING { return s.value }
+            / s:BIGSTRING { return s.value }
+            / s:BIGSTRING_NO_NL { return s.value }
+            / { error("Missing template"); }
+        ) __ {
+            if (name.value !== curGroup.fileName) {
+                error("Template name must match filename.");
+            }
+            verboseLog("Template definition: " + name.value);
+            curGroup.addTemplate({
+                name: name.value,
+                args: args,
+                template: parseTemplate(template).value
+            });
+            return curGroup;
+        }
+
+/*
  * RAW TEMPLATE
  */
 
@@ -265,10 +314,10 @@ templateAndEOF
         }
 
 /*
- * ENTRY POINT: templateRaw
+ * ENTRY POINT: templateFileRaw
  * This entry point is for raw .st files
  */
-templateRaw
+templateFileRaw
     = t:template EOF {
             curGroup.addTemplate({
                 name: curGroup.fileName,
@@ -370,32 +419,39 @@ ifstat
 		->                    ^('if' $c1 $t1? ^('elseif' $c2 $t2)* ^('else' $t3?)?) */
 
 conditional
-    = andConditional ( __ "||" __ andConditional )*
+    = l:andConditional r:( __ "||" __ a:andConditional { return a; } )* {
+            if (r.length === 0) {
+                return l;
+            } // else
+            return {
+                type: "OR",
+                left: l,
+                right: r // xxx this can be an array is that a problem?
+            }
+        }
 
 andConditional
-    = notConditional ( __ "&&" __ notConditional )*
+    = l:notConditional r:( __ "&&" __ n:notConditional { return n; } )* {
+            if (r.length === 0) {
+                return l;
+            } // else
+            return {
+                type: "AND",
+                left: l,
+                right: r // xxx this can be an array is that a problem?
+            }
+        }
 
 notConditional
-    = "!" __ notConditional
-    / memberExpr
+    = "!" __ n:notConditional { return { type: "NOT", value: n }; }
+    / e:memberExpr { return e; }
+
 
 exprOptions
     = first:option rest:( __ ',' __ o:option { return o; } )* {
             return makeList(first, rest);
         }
 
-/*
-@init {
-	String id = input.LT(1).getText();
-	String defVal = Compiler.defaultOptionValues.get(id);
-	boolean validOption = Compiler.supportedOptions.get(id)!=null;
-...
-        if ( !validOption ) {
-            errMgr.compileTimeError(ErrorType.NO_SUCH_OPTION, templateToken, $ID, $ID.text);
-        }
-
-}
-*/
 option
     = name:ID val:( __ "=" __ e:exprNoComma { return e; } )? {
             var optionName = name.value,
@@ -408,7 +464,6 @@ option
                 error("Value required for option " + optionName);
             }
             return {
-                type: "OPTION",
                 name: optionName,
                 value: value
             };
@@ -795,7 +850,7 @@ TEXT_CHAR
 /*
  * \< or \> -> < or >
  * <\ >, <\n>, <\t>, <\r> -> space, line feed, tab, carriage return  - can have multiple
- * <\uXXXX> -> Unicode character - can have multiple
+ * <\uhhhh> -> Unicode character (hhhh is a hex number) - can have multiple
  * <\\> ([ \t])*(\r|\r\n|\n). -> .  // ignores new line
  */
 ESCAPE
