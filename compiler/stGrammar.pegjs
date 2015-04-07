@@ -46,7 +46,7 @@
 
     var logger = function(message) {
         console.log(message);
-    }
+    };
 
     function verboseLog(message) {
         if (verbose) {
@@ -176,9 +176,9 @@ templateDef
         )
         __ "::=" __
         template:(
-            s:STRING { return s.value }
-            / s:BIGSTRING { return s.value }
-            / s:BIGSTRING_NO_NL { return s.value }
+            s:STRING { return s.value; }
+            / s:BIGSTRING { return s.value; }
+            / s:BIGSTRING_NO_NL { return s.value; }
             / { error("Missing template"); }
         ) {
             if (def.enclosingTemplate) {
@@ -283,9 +283,9 @@ templateFile
     = __ name:ID "(" __ args:formalArgs __ ")"
         __ "::=" __
         template:(
-            s:STRING { return s.value }
-            / s:BIGSTRING { return s.value }
-            / s:BIGSTRING_NO_NL { return s.value }
+            s:STRING { return s.value; }
+            / s:BIGSTRING { return s.value; }
+            / s:BIGSTRING_NO_NL { return s.value; }
             / { error("Missing template"); }
         ) __ {
             if (name.value !== curGroup.fileName) {
@@ -322,7 +322,7 @@ templateFileRaw
             curGroup.addTemplate({
                 name: curGroup.fileName,
                 args: null, // xxx is this OK?
-                templatet: t.value
+                template: t.value
             });
             return curGroup;
         }
@@ -331,7 +331,7 @@ template
     = e:(!(INDENT? START_CHAR "elseif" / INDENT? START_CHAR "else" / INDENT? START_CHAR "endif" ) i:element { return i; })* { return {
                 type: "TEMPLATE",
                 value: e || null // xxx should this be null or text token with empty string value
-            }
+            };
         }
 
 element
@@ -342,10 +342,10 @@ element
                 value: se
             };
         }
-    / &{ outside=true; return true } se:singleElement {
+    / &{ outside = true; return true; } se:singleElement {
             return se;
         }
-    / &{ outside=true; return true } ce:compoundElement {
+    / &{ outside = true; return true; } ce:compoundElement {
             return ce;
         }
 
@@ -381,35 +381,46 @@ region
            ^(INDENTED_EXPR $i ^(REGION[$x] ID template?))
         ->                    ^(REGION[$x] ID template?) */
 
+
   // ignore final INDENT before } as it's not part of outer indent
 subtemplate
     = '{' ( args:formalArgsNoDefault '|' )? template INDENT? '}' {
             return {
                 type: "SUBTEMPLATE",
-                args: args.args,
-                template: template
+                args: args,
+                template: template.value
             };
         }
 
 formalArgsNoDefault
     = first:ID ( __ ',' __ rest:ID)* {
-            return {
-                type: "ARGS",
-                args: makeList(first, rest)
-            }
+            return makeList(first, rest);
         }
 
 ifstat
-	= i:INDENT? START "if" __ "(" __ c1:conditional __ ")" STOP /*xxx{if (input.LA(1)!=NEWLINE) indent=$i;} */
-        t1:template
-        ( !(INDENT? START_CHAR "else" STOP_CHAR) INDENT? START "elseif" __ "(" __ c2:conditional __ ")" STOP t2:template )* // xxx how to gather all the t2s?
-        ( INDENT? START "else" STOP t3:template )?
+	= i:INDENT? START "if" __ "(" __ c:conditional __ ")" STOP /*xxx{if (input.LA(1)!=NEWLINE) indent=$i;} */
+        t:template
+        ei:( !(INDENT? START_CHAR "else" STOP_CHAR) INDENT? START
+            "elseif" __ "(" __ c:conditional __ ")" STOP t:template {
+                return {
+                    type: "ELSEIF",
+                    condition: c,
+                    template: t.value
+                };
+            })*
+        e:( INDENT? START "else" STOP t:template {
+                return {
+                    type: "ELSE",
+                    template: t.value
+                };
+            })?
         INDENT? START "endif" STOP {
                 return {
                     type: "IF",
-                    condition: c1,
-                    then: t1
-                    // xxx what else
+                    condition: c,
+                    template: t.value,
+                    elseif: ei,
+                    else: e
                 };
             }
 /*xxx		// kill \n for <endif> on line by itself if multi-line IF
@@ -427,7 +438,7 @@ conditional
                 type: "OR",
                 left: l,
                 right: r // xxx this can be an array is that a problem?
-            }
+            };
         }
 
 andConditional
@@ -439,7 +450,7 @@ andConditional
                 type: "AND",
                 left: l,
                 right: r // xxx this can be an array is that a problem?
-            }
+            };
         }
 
 notConditional
@@ -475,7 +486,7 @@ exprNoComma
                 return {
                     type: "MAP",
                     expr: me,
-                    template: ref
+                    using: ref
                 };
             } else {
                 return me;
@@ -512,31 +523,39 @@ mapExpr
  *
  */
 mapExpr
-    = m1:memberExpr zip:( ( __ "," __ memberExpr )+ __ ":" __ mapTemplateRef )?
-        map:( ":" __ mapTemplateRef ( __ "," __ mapTemplateRef )*  )* {
+    = m1:memberExpr zip:( mn:( __ "," __ m:memberExpr { return m; } )+ __ ":" __ tr:mapTemplateRef { return [ mn, tr ]; } )?
+        maps:( ":" __ first:mapTemplateRef rest:( __ "," __ r:mapTemplateRef { return r; } )* { return makeList(first, rest); } )* {
+                var res = m1;
                 if (zip) {
-                    return {
-                        type: "ZIP"
-                        //xxx
+                    res = {
+                        type: "ZIP",
+                        expr: makeList(m1, zip[0]),
+                        using: zip[1]
                     };
-                } else if (map.length > 0) {
-                    return {
-                        type: "MAP"
-                        //xxx
-                    };
-                } else {
-                    return m1;
                 }
+                if (maps.length > 0) {
+                    res = {
+                        type: "MAP",
+                        expr: res,
+                        using: maps
+                    };
+                }
+                return res;
             }
 
-/**
-expr:template(args)  apply template to expr
-expr:{arg | ...}     apply subtemplate to expr
-expr:(e)(args)       convert e to a string template name and apply to expr
-*/
-//xxx
+/*
+ * expr:template(args)  apply template to expr
+ * expr:{arg | ...}     apply subtemplate to expr
+ * expr:(e)(args)       convert e to a string template name and apply to expr
+ */
 mapTemplateRef
-    = ID '(' args ')' //xxx							-> ^(INCLUDE ID args?)
+    = i:ID '(' a:args ')' {
+            return {
+                type: "INCLUDE",
+                templateName: i.value,
+                args: a,
+            };
+        }
     / subtemplate
     / '(' mapExpr ')' '(' argExprList? ')' // xxx -> ^(INCLUDE_IND mapExpr argExprList?)
 
@@ -556,13 +575,13 @@ memberExpr
                 return {
                     type: "PROP",
                     property: prop.value
-                }
+                };
             }
         / '.' '(' e:mapExpr ')' {
                 return {
                     type: "PROP_IND",
                     property: e
-                }
+                };
             }
         )* {
                 if (props.length > 0) {
@@ -570,7 +589,7 @@ memberExpr
                         type: "MEMBER_EXPR",
                         object: e,
                         properties: props
-                    }
+                    };
                 } else {
                     return e;
                 }
@@ -625,8 +644,8 @@ primary
                 name: i.value
             };
         }
-    / s:STRING { return s.value }
-    / subtemplate
+    / s:STRING { return s.value; }
+    / t:subtemplate { return t.value; }
     / list
 //xxx    |	{$conditional.size()>0}?=>  '('! conditional ')'!
 //    |	{$conditional.size()==0}?=> lp='(' expr ')'
@@ -816,7 +835,7 @@ START
  * Character that starts an expression. This is configurable. Typically < or $
  */
 START_CHAR
-    = &{ return (input.charAt(peg$currPos) === delimiterStartChar) } .
+    = &{ return (input.charAt(peg$currPos) === delimiterStartChar); } .
 
 /*
  * <! comment !>
@@ -872,7 +891,7 @@ NEWLINE
             return {
                 type: "NEWLINE",
                 value: text()
-            }
+            };
         }
 
 /*
@@ -887,4 +906,4 @@ STOP "stop delimiter"
  * Character that stops an expression. This is configurable. Typically > or $
  */
 STOP_CHAR
-    = &{ return (input.charAt(peg$currPos) === delimiterStopChar) } .
+    = &{ return (input.charAt(peg$currPos) === delimiterStopChar); } .

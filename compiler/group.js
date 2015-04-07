@@ -29,6 +29,7 @@
  * group.js
  * xxx
  */
+"use strict";
 
 // xxx get these from the runtime
 var functions = ["first", "length", "strlen", "last", "rest", "reverse", "trunc", "strip", "trim"],

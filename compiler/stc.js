@@ -31,13 +31,15 @@
  * and writes a JavaScript module that implements the template at runtime.
  * Also exports callable functions to do the same from another program.
  */
+"use strict";
+
 var fs = require("fs"),
     path = require("path"),
     parser = require("./stGrammar.js"),
     makeGroup = require("./group.js").makeGroup,
     stGroup = require("../lib/stGroup.js");
 
-var VERSION = "0.1";
+var VERSION = "0.1.0";
 
 var gVerbose = false,
     gOutputAST = false;
@@ -50,7 +52,13 @@ function setVerbose(v) {
     gVerbose = v;
 }
 
-// xxx getter?
+/**
+ * xxx
+ * @returns {boolean}
+ */
+function getVerbose() {
+    return gVerbose;
+}
 
 /**
  * xxx
@@ -60,7 +68,13 @@ function setOutputAST(o) {
     gOutputAST = o;
 }
 
-// xxx getter?
+/**
+ * xxx
+ * @returns {boolean}
+ */
+function getOutputAST() {
+    return gOutputAST;
+}
 
 function fatalIOError(ex, file) {
     if (ex.code === "ENOENT") {
@@ -91,7 +105,7 @@ function startRule(ext, raw) {
 }
 
 function getFileReader(baseDir, encoding) {
-    var readFile = function(file) {
+    return function(file) {
         var text;
 
         // files, if not absolute, are relative to the given base dir
@@ -106,7 +120,6 @@ function getFileReader(baseDir, encoding) {
         }
         return text;
     };
-    return readFile;
 }
 
 function parseFile(file, writer, options) {
@@ -263,7 +276,7 @@ var tempWriter = {
     write: function(text) {
         console.log(text);
     }
-}
+};
 
 function main() {
 
@@ -353,7 +366,9 @@ module.exports = {
     compileGroupDir: compileGroupDir,
     compileRawGroupDir: compileRawGroupDir,
     setVerbose: setVerbose,
-    setOutputAST: setOutputAST
+    getVerbose: getVerbose,
+    setOutputAST: setOutputAST,
+    getOutputAST: getOutputAST
 };
 
 if (require.main === module) {
