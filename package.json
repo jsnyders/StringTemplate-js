@@ -20,6 +20,7 @@
         "grunt-contrib-jshint": "~0.11",
         "grunt-contrib-watch": "~0.6",
         "grunt-peg": "~1.5",
+        "grunt-mocha-test": "~0.12",
         "grunt-contrib-nodeunit": "~0.4",
         "grunt-contrib-uglify": "~0.8",
         "grunt-contrib-watch": "~0.6",

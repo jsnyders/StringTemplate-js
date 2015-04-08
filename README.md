@@ -8,3 +8,6 @@ Templates will be compiled to JavaScript
 ## License
 BSD
 
+## Building
+
+Additional development dependencies: need grunt-cli, mocha and pegjs installed globally

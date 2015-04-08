@@ -33,6 +33,17 @@ module.exports = function(grunt) {
             }
         },
 
+        mochaTest: {
+            all: {
+                options: {
+                    reporter: 'spec',
+                    quiet: false,
+                    clearRequireCache: true
+                },
+                src: ['test/**/*.js']
+            }
+        },
+
         watch: {
             grammar: {
                 files: ["compiler/stGrammar.pegjs"],
@@ -41,9 +52,16 @@ module.exports = function(grunt) {
                     spawn: false
                 }
             },
-            scripts: {
+            code: {
                 files: ["lib/*.js", "compiler/*.js"],
                 tasks: ["jshint"],
+                options: {
+                    spawn: false
+                }
+            },
+            tests: {
+                files: ["test/**/*.js", "lib/*.js", "compiler/*.js"],
+                tasks: ["mochaTest"],
                 options: {
                     spawn: false
                 }
@@ -59,6 +77,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-peg');
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-contrib-watch');
+    grunt.loadNpmTasks('grunt-mocha-test');
 
     grunt.loadNpmTasks('grunt-contrib-copy'); // xxx needed?
     grunt.loadNpmTasks('grunt-contrib-uglify'); // xxx needed?
@@ -68,6 +87,6 @@ module.exports = function(grunt) {
     //
 
     // Default task(s).
-    grunt.registerTask('default', ['peg', "jshint"]);
+    grunt.registerTask('default', ['peg', "jshint", "test"]);
 
 };
