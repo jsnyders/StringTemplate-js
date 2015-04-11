@@ -218,7 +218,7 @@ describe("stGroup", function() {
             assert.strictEqual(template.scope.a.level, "g");
             assert.strictEqual(template.scope.b.level, "bg1");
             assert.strictEqual(template.scope.c.level, "bg2");
-            assert.strictEqual(template.scope.d.level, "bg3");
+            assert.strictEqual(template.scope.d.level, "bg21");
 
             template = g.getTemplate("t3");
             assert.strictEqual(template.render, t3, "template found because nothing with same name comes before it or overrides it");
@@ -226,7 +226,7 @@ describe("stGroup", function() {
             assert.strictEqual(template.scope.a.level, "g");
             assert.strictEqual(template.scope.b.level, "bg1");
             assert.strictEqual(template.scope.c.level, "bg2");
-            assert.strictEqual(template.scope.d.level, "bg3");
+            assert.strictEqual(template.scope.d.level, "bg21");
         });
 
     });
