@@ -18,7 +18,6 @@ describe("hello world test", function() {
         assert.notStrictEqual(t, null, "found a template");
         t.add("audience", "world");
         t.write(writer);
-        console.log("xxx result: " + writer.toString());
         assert.strictEqual(writer.toString(), "Hello world!\n", "got expected rendered text");
     });
 });
