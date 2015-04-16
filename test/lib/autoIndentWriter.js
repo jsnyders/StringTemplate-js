@@ -176,7 +176,7 @@ describe("autoIndentWriter", function() {
             assert.strictEqual(w.toString(), "start here! -- this extra text will not wrap.\n           abc def ghi jkl\n           abc def ghi jkl", "correct text");
         });
 
-        // xxx with no wrap
+        // xxx test with A\nB and A\r\nB
         // xxx test writeWrap
     });
     // xxx anchor
