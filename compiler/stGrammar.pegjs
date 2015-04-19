@@ -193,7 +193,7 @@ templateDef
             return null;
         }
     / alias:ID __ '::=' __ target:ID  {
-            verboseLog("Template alias: " + name.value + " > " + target.value);
+            verboseLog("Template alias: " + alias.value + " > " + target.value);
             curGroup.addTemplateAlias(alias.value, target.value);
             return null;
         }

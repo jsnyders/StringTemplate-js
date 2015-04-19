@@ -87,6 +87,6 @@ module.exports = function(grunt) {
     //
 
     // Default task(s).
-    grunt.registerTask('default', ['peg', "jshint", "test"]);
+    grunt.registerTask('default', ['peg', "jshint", "mochaTest"]);
 
 };
