@@ -259,6 +259,8 @@ function compileRawGroupDir(dir, writer, encoding, delimiterStartChar, delimiter
 }
 
 function outputAST(groupAST, writer) {
+    groupAST.date = (new Date()).toString();
+    groupAST = {g:groupAST};
     writer.write(JSON.stringify(groupAST, null, 4));
 }
 

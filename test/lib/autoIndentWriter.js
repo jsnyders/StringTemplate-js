@@ -80,7 +80,7 @@ describe("autoIndentWriter", function() {
     });
 
     describe("write with indent", function() {
-        it("should indent text correctly", function () {
+        it("should indent text correctly", function() {
             var n, w = aiw.makeWriter({lineWidth: 78, eol: "\n"});
 
             n = w.write("if foo then");
@@ -96,7 +96,7 @@ describe("autoIndentWriter", function() {
             assert.strictEqual(w.toString(), "if foo then\n  statement1\n  statement2\nend if\n", "correct text");
         });
 
-        it("should indent text correctly multiple levels", function () {
+        it("should indent text correctly multiple levels", function() {
             var n, expected, w = aiw.makeWriter({lineWidth: 78, eol: "\n"});
 
             n = w.write("if foo then");
@@ -122,7 +122,7 @@ describe("autoIndentWriter", function() {
     });
 
     describe("write with wrap, indent, anchor", function() {
-        it("should wrap text correctly with default wrap", function () {
+        it("should wrap text correctly with default wrap", function() {
             var n, expected, w = aiw.makeWriter({lineWidth: 8, eol: "\n"});
 
             n = w.write("this long line will not wrap\n");
@@ -138,7 +138,7 @@ describe("autoIndentWriter", function() {
             assert.strictEqual(w.index(), expected.length, "correct index");
         });
 
-        it("should wrap text correctly with default wrap and indent", function () {
+        it("should wrap text correctly with default wrap and indent", function() {
             var n, w = aiw.makeWriter({lineWidth: 8, eol: "\n"});
 
             n = w.write("this text will not wrap.");
@@ -152,7 +152,7 @@ describe("autoIndentWriter", function() {
             assert.strictEqual(w.toString(), "this text will not wrap.\n    abc\n    123abcdef", "correct text");
         });
 
-        it("should not wrap text when line width set to NO_WRAP", function () {
+        it("should not wrap text when line width set to NO_WRAP", function() {
             var n, w = aiw.makeWriter({eol: "\n"});
 
             assert(w.lineWidth, aiw.NO_WRAP, "the default line width is NO_WRAP");
@@ -162,7 +162,7 @@ describe("autoIndentWriter", function() {
             assert.strictEqual(w.toString(), "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbb", "correct text");
         });
 
-        it("should wrap text and indent to the anchor position", function () {
+        it("should wrap text and indent to the anchor position", function() {
             var n, w = aiw.makeWriter({lineWidth: 20, eol: "\n"});
 
             n = w.write("start here!");
@@ -176,9 +176,102 @@ describe("autoIndentWriter", function() {
             assert.strictEqual(w.toString(), "start here! -- this extra text will not wrap.\n           abc def ghi jkl\n           abc def ghi jkl", "correct text");
         });
 
-        // xxx test with A\nB and A\r\nB
-        // xxx test writeWrap
+        it("should wrap text correctly with A\\nB format wrap string and crlf line ending", function() {
+            var n, w = aiw.makeWriter({lineWidth: 8, eol: "\r\n"});
+
+            n = w.write("var myStr = 'part 0");
+            w.pushIndentation("    ");
+            assert.strictEqual(n, 19, "correct number of chars written");
+            n = w.write("part one", "' +\n'"); // wrap by ending a string and starting a new one
+            assert.strictEqual(n, 18, "correct number of chars written");
+            n = w.write("x", "' +\n'"); // wrap by ending a string and starting a new one
+            assert.strictEqual(n, 11, "correct number of chars written");
+            n = w.write("part two", "' +\n'"); // wrap by ending a string and starting a new one
+            assert.strictEqual(n, 8, "correct number of chars written");
+            n = w.write("end';", "' +\n'");
+            assert.strictEqual(n, 15, "correct number of chars written");
+            assert.strictEqual(w.toString(), "var myStr = 'part 0' +\r\n    'part one' +\r\n    'xpart two' +\r\n    'end';", "correct text");
+        });
+
+        it("should wrap text correctly using writeWrap with A\\nB format wrap string", function() {
+            var n, expected, w = aiw.makeWriter({lineWidth: 8, eol: "\n"});
+
+            n = w.write("var myStr = 'part 0");
+            w.pushIndentation("    ");
+            assert.strictEqual(n, 19, "correct number of chars written");
+            n = w.writeWrap("' +\n'");
+            assert.strictEqual(n, 9, "correct number of wrap chars written");
+            n = w.write("part one");
+            n = w.writeWrap("' +\n'");
+            assert.strictEqual(n, 9, "correct number of wrap chars written");
+            n = w.write("x");
+            n = w.writeWrap("' +\n'");
+            assert.strictEqual(n, 0, "correct number of wrap chars written");
+            n = w.write("part two");
+            n = w.writeWrap("' +\n'");
+            assert.strictEqual(n, 9, "correct number of wrap chars written");
+            n = w.write("end';");
+            expected = "var myStr = 'part 0' +\n    'part one' +\n    'xpart two' +\n    'end';";
+            assert.strictEqual(w.toString(), expected, "correct text");
+            assert.strictEqual(w.index(), expected.length, "correct index");
+        });
     });
-    // xxx anchor
+
+    describe("write with anchor", function() {
+        it("should anchor at the correct place", function() {
+            var n, expected, w = aiw.makeWriter({eol: "\n"});
+
+            n = w.write("12345");
+            assert.strictEqual(n, 5, "correct number of chars written");
+            w.pushAnchorPoint();
+            n = w.write("\nabc");
+            assert.strictEqual(n, 9, "correct number of chars written");
+            w.popAnchorPoint();
+            n = w.write("\n");
+            n = w.write("abc");
+            assert.strictEqual(n, 3, "correct number of chars written");
+            expected = "12345\n     abc\nabc";
+            assert.strictEqual(w.toString(), expected, "correct text");
+            assert.strictEqual(w.index(), expected.length, "correct index");
+        });
+
+        it("should handle nested anchors", function() {
+            var n, expected, w = aiw.makeWriter({eol: "\n"});
+
+            n = w.write("12345");
+            assert.strictEqual(n, 5, "correct number of chars written");
+            w.pushAnchorPoint();
+            n = w.write("\nabc");
+            assert.strictEqual(n, 9, "correct number of chars written");
+            w.pushAnchorPoint();
+            n = w.write("\ndef");
+            assert.strictEqual(n, 12, "correct number of chars written");
+            n = w.write("\n");
+            assert.strictEqual(n, 9, "correct number of chars written");
+            n = w.write("ghi");
+            assert.strictEqual(n, 3, "correct number of chars written");
+            w.popAnchorPoint();
+            n = w.write("\nelse");
+            w.popAnchorPoint();
+            n = w.write("\nend");
+            expected = "12345\n     abc\n        def\n        ghi\n     else\nend";
+            assert.strictEqual(w.toString(), expected, "correct text");
+            assert.strictEqual(w.index(), expected.length, "correct index");
+        });
+    });
+
+    describe("writeSeparator", function() {
+        it("should write a separator", function() {
+            var n, w = aiw.makeWriter({eol: "\n"});
+
+            n = w.write("a");
+            assert.strictEqual(n, 1, "correct number of chars written");
+            n = w.writeSeparator(", ");
+            assert.strictEqual(n, 2, "correct number of chars written");
+            n = w.write("b");
+            assert.strictEqual(n, 1, "correct number of chars written");
+            assert.strictEqual(w.toString(), "a, b", "correct text");
+        });
+    });
 
 });

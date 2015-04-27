@@ -73,8 +73,8 @@ describe("stGroup", function() {
 
             g.addTemplate("/a/b/t1", t1);
             assert.strictEqual(g.templates["/a/b/t1"], t1, "has template added");
-            g.addTemplate("t2", t2);
-            assert.strictEqual(g.templates["t2"], t2, "has template added");
+            g.addTemplate("/t2", t2);
+            assert.strictEqual(g.templates["/t2"], t2, "has template added");
         });
         // xxx is it an error to overwrite a template with the same name?
     });
@@ -85,7 +85,7 @@ describe("stGroup", function() {
                 g = st.loadGroup(emptyGroup),
                 t1 = function f1() {};
 
-            g.addTemplate("t1", t1);
+            g.addTemplate("/t1", t1);
             template = g.getTemplate("t1");
             assert.notStrictEqual(template, null, "found a template");
             assert.strictEqual(template.render, t1, "found the right template");
@@ -99,9 +99,9 @@ describe("stGroup", function() {
                 baseGroup = st.loadGroup(emptyGroup),
                 t1 = function f1() {};
 
-            baseGroup.addTemplate("t1", t1);
+            baseGroup.addTemplate("/t1", t1);
             g.addImport(baseGroup);
-            template = g.getTemplate("t1");
+            template = g.getTemplate("t1"); // It is OK to omit the / at the root
             assert.notStrictEqual(template, null, "found a template");
             assert.strictEqual(template.render, t1, "correct template found");
             assert.strictEqual(template.owningGroup, g, "template has the right group");
@@ -115,10 +115,10 @@ describe("stGroup", function() {
                 t1 = function f1() {},
                 t1a = function f2() {};
 
-            baseGroup.addTemplate("t1", t1);
+            baseGroup.addTemplate("/t1", t1);
             g.addImport(baseGroup);
-            g.addTemplate("t1", t1a);
-            template = g.getTemplate("t1");
+            g.addTemplate("/t1", t1a);
+            template = g.getTemplate("/t1");
             assert.notStrictEqual(template, null, "found a template");
             assert.strictEqual(template.render, t1a, "correct template found");
             assert.strictEqual(template.owningGroup, g, "template has the right group");
@@ -137,11 +137,11 @@ describe("stGroup", function() {
                 t1a = function () {},
                 t2a = function () {};
 
-            bg1.addTemplate("t1", t1);
-            bg2.addTemplate("t1", t1a);
-            bg2.addTemplate("t2", t2);
-            bg21.addTemplate("t2", t2a);
-            bg21.addTemplate("t3", t3);
+            bg1.addTemplate("/t1", t1);
+            bg2.addTemplate("/t1", t1a);
+            bg2.addTemplate("/t2", t2);
+            bg21.addTemplate("/t2", t2a);
+            bg21.addTemplate("/t3", t3);
 
             // (g [(bg1 []), (bg2 [(bg21)]))
             bg2.addImport(bg21);
@@ -169,7 +169,7 @@ describe("stGroup", function() {
                 g = st.loadGroup(emptyGroup),
                 t1 = function f1() {};
 
-            g.addTemplate("t1", t1);
+            g.addTemplate("/t1", t1);
             g.addDictionary("x", {
                 a:"A",
                 b:"B"
@@ -196,8 +196,8 @@ describe("stGroup", function() {
                 t1 = function () {},
                 t3 = function () {};
 
-            bg1.addTemplate("t1", t1);
-            bg21.addTemplate("t3", t3);
+            bg1.addTemplate("/t1", t1);
+            bg21.addTemplate("/t3", t3);
 
             // (g [(bg1 []), (bg2 [(bg21)]))
             bg2.addImport(bg21);
@@ -236,19 +236,19 @@ describe("stGroup", function() {
             var g = st.loadGroup(emptyGroup),
                 t1 = function f1() {};
 
-            g.addTemplate("t1", t1);
-            g.addTemplateAlias("t2", "t1");
-            assert.strictEqual(g.templates["t1"], t1, "has template added");
-            assert.strictEqual(g.templates["t2"], t1, "has template alias added");
+            g.addTemplate("/t1", t1);
+            g.addTemplateAlias("/t2", "/t1");
+            assert.strictEqual(g.templates["/t1"], t1, "has template added");
+            assert.strictEqual(g.templates["/t2"], t1, "has template alias added");
         });
 
         it("should throw an exception if the target doesn't exist.", function() {
             var g = st.loadGroup(emptyGroup),
                 t1 = function f1() {};
 
-            g.addTemplate("t1", t1);
+            g.addTemplate("/t1", t1);
             assert.throws(function() {
-                g.addTemplateAlias("t2", "t3");
+                g.addTemplateAlias("/t2", "/t3");
             }, /.*No such template.*t3/, "not found");
         });
 
@@ -258,10 +258,10 @@ describe("stGroup", function() {
                 t1 = function f1() {};
 
             g.addImport(baseGroup);
-            baseGroup.addTemplate("t1", t1);
+            baseGroup.addTemplate("/t1", t1);
             assert.strictEqual(g.getTemplate("t1").render, t1, "template found");
             assert.throws(function() {
-                g.addTemplateAlias("t2", "t1");
+                g.addTemplateAlias("/t2", "/t1");
             }, /.*No such template.*t1/, "alias target not found");
         });
     });
@@ -272,12 +272,38 @@ describe("stGroup", function() {
                 g = st.loadGroup(emptyGroup),
                 t1 = function f1() {};
 
-            g.addTemplate("t1", t1);
-            g.addTemplateAlias("t2", "t1");
+            g.addTemplate("/t1", t1);
+            g.addTemplateAlias("/t2", "/t1");
             template = g.getTemplate("t1");
             assert.strictEqual(template.render, t1, "found the right template under original name");
             template = g.getTemplate("t2");
             assert.strictEqual(template.render, t1, "found the right template under alias");
+        });
+    });
+
+    describe("attributeRenderer register and get", function() {
+        it("should find a function registered", function() {
+            var rfn, r,
+                g = st.loadGroup(emptyGroup);
+
+            r = function(val, fmt, ctx) {};
+
+            g.registerAttributeRenderer("number", r);
+            rfn = g.getAttributeRenderer("number");
+
+            assert.strictEqual(rfn, r, "found the right renderer");
+        });
+
+        it("should return null if there is no function registered for a type", function() {
+            var rfn, r,
+                g = st.loadGroup(emptyGroup);
+
+            r = function(val, fmt, ctx) {};
+
+            g.registerAttributeRenderer("number", r);
+            rfn = g.getAttributeRenderer("Foo");
+
+            assert.strictEqual(rfn, null, "no renderer found");
         });
     });
 });

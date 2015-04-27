@@ -37,7 +37,7 @@ compiledGroup(g) ::= <<
 function getInstance(st, group) {
     "use strict";
 
-group.name = "$g.fileName$"; $! ;format="string" !$
+group.name = "$g.fileName;format="string"$";
 
 $imports(g.imports)$
 
@@ -46,7 +46,7 @@ $dictionaries(g.dictionaries)$
 $templates(g.templates)$
 
 $aliases(g.aliases)$
-
+return group;
 }
 
 module.exports = getInstance;
@@ -57,7 +57,7 @@ $im:importFile()$
 >>
 
 importFile(file) ::= <<
-group.addImport("$file$"); $! should use ;format="string"!$
+group.addImport("$file;format="string"$");
 
 >>
 
@@ -66,13 +66,13 @@ $d:{k | $dictionary(d.(k))$}$
 >>
 
 dictionary(d) ::= <<
-group.addDictionary($d.name$, {
+group.addDictionary("$d.name;format="string"$", {
     $d.map : { k | $props(k, d.map.(k))$ };separator=",\n"$
 });
 >>
 
 props(k, v) ::= <<
-    $k$: $v$
+    $k;format="key"$: $v$
 >>
 
 templates(t) ::= <<
@@ -80,10 +80,42 @@ $t : { k | $templateDef(k, t.(k))$ }$
 >>
 
 templateDef(name, t) ::= <<
-group.addTemplate($name$, function(s, w, rc) {
-    // todo
+group.addTemplate("$name;format="string"$", function(s, w, rc) {
+    var g = this.owningGroup;
+    $t.template:templateElement()$
 });
 >>
+
+templateElement(e) ::= <<
+$if(e)$ $!xxx would like to clean out nulls beforehand !$
+$({template$e.type$})(e)$$endif$
+>>
+
+templateTEXT(e) ::= <%
+    w.write("$e.value;format="string"$");
+%>
+
+templateEXPR(e) ::= <<
+st.write(w, g, rc, $({expr$e.expr.type$})(e.expr)$, $exprOptions(e.options)$);
+>>
+
+templateNEWLINE(e) ::= <%
+    w.write("\n");$! todo track position in current line for tracing? !$
+%>
+
+exprATTRIBUTE(a) ::= <%
+s.$a.name$
+%>
+
+exprOptions(opts) ::= <%
+{
+    $opts:{o|$exprOption(o.name, o.value)$};separator=",\n"$
+}
+%>
+
+exprOption(k, v) ::= <%
+    "$k;format="string"$": "$v;format="string"$"
+%>
 
 aliases(a) ::= <<
 $a : { k | $alias(k, a.(k))$ }$
