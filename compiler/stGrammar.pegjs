@@ -335,10 +335,13 @@ template
         }
 
 element
-    = &{return column() === 1;} INDENT? ST_COMMENT NEWLINE { return null; }
-    / INDENT se:singleElement {
+    = &{return column() === 1;} INDENT? ST_COMMENT NEWLINE { return null; }  // a comment optionally preceded by indent
+                                                                             // and immediately followed by a new line
+                                                                             // is ignored including the newline
+    / i:INDENT se:singleElement {
             return {
                 type: "INDENTED_EXPR",
+                indent: i.value,
                 value: se
             };
         }
@@ -400,15 +403,16 @@ formalArgsNoDefault
 ifstat
 	= i:INDENT? START "if" __ "(" __ c:conditional __ ")" STOP /*xxx{if (input.LA(1)!=NEWLINE) indent=$i;} */
         t:template
-        ei:( !(INDENT? START_CHAR "else" STOP_CHAR) INDENT? START
-            "elseif" __ "(" __ c:conditional __ ")" STOP t:template {
+        ei:( !(INDENT? START_CHAR "else" STOP_CHAR / INDENT? START_CHAR "endif" STOP_CHAR)
+            INDENT? START "elseif" __ "(" __ c:conditional __ ")" STOP t:template {
                 return {
                     type: "ELSEIF",
                     condition: c,
                     template: t.value
                 };
             })*
-        e:( INDENT? START "else" STOP t:template {
+        e:( !(INDENT? START_CHAR "endif" STOP_CHAR)
+            INDENT? START "else" STOP t:template {
                 return {
                     type: "ELSE",
                     template: t.value
@@ -823,7 +827,10 @@ EOF "end of file"
 
 INDENT
     = &{return outside && column() === 1;} WS_CHAR+ {
-            return { type: "INDENT" };
+            return {
+                type: "INDENT",
+                value: text()
+            };
         }
 
 START

@@ -99,6 +99,12 @@ templateEXPR(e) ::= <<
 st.write(w, g, rc, $({expr$e.expr.type$})(e.expr)$, $exprOptions(e.options)$);
 >>
 
+templateINDENTED_EXPR(e) ::= <<
+w.pushIndentation("$e.indent;format="string"$");
+$({template$e.value.type$})(e.value)$
+w.popIndentation();
+>>
+
 templateNEWLINE(e) ::= <%
     w.write("\n");$! todo track position in current line for tracing? !$
 %>
