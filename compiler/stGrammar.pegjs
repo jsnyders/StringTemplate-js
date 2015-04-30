@@ -423,8 +423,8 @@ ifstat
                     type: "IF",
                     condition: c,
                     template: t.value,
-                    elseif: ei,
-                    else: e
+                    elseifPart: ei,
+                    elsePart: e
                 };
             }
 /*xxx		// kill \n for <endif> on line by itself if multi-line IF
@@ -625,7 +625,8 @@ includeExpr
              return {
                  type: "INCLUDE",
                  name: i.value,
-                 args: a
+                 args: a.value,
+                 argsPassThrough: a.passThrough
              };
          }
 // xxx todo region stuff
@@ -662,11 +663,9 @@ args
 	/ first:namedArg rest:( __ ',' __ a:namedArg { return a; } )* passThrough:( __ ',' __ pt:'...' { return true; })? {
 	        var ret = {
                 type: "ARGS",
-                value: makeList(first, rest)
+                value: makeList(first, rest),
+                passThrough: !!passThrough
 	        };
-	        if (passThrough) {
-	            ret.passThrough = true;
-	        }
 	        return ret;
 	    }
     / '...' {

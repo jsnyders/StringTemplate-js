@@ -76,7 +76,7 @@ props(k, v) ::= <<
 >>
 
 templates(t) ::= <<
-$t : { k | $templateDef(k, t.(k))$ }$
+$t : { k | $templateDef(k, t.(k))$ };separator="\n"$
 >>
 
 templateDef(name, t) ::= <<
@@ -91,12 +91,12 @@ $if(e)$ $!xxx would like to clean out nulls beforehand !$
 $({template$e.type$})(e)$$endif$
 >>
 
-templateTEXT(e) ::= <%
-    w.write("$e.value;format="string"$");
-%>
+templateTEXT(e) ::= <<
+w.write("$e.value;format="string"$");
+>>
 
 templateEXPR(e) ::= <<
-st.write(w, g, rc, $({expr$e.expr.type$})(e.expr)$, $exprOptions(e.options)$);
+st.write(w, g, rc, $({expr$e.expr.type$})(e.expr)$$if(e.options)$, $exprOptions(e.options)$$endif$);
 >>
 
 templateINDENTED_EXPR(e) ::= <<
@@ -105,13 +105,61 @@ $({template$e.value.type$})(e.value)$
 w.popIndentation();
 >>
 
-templateNEWLINE(e) ::= <%
-    w.write("\n");$! todo track position in current line for tracing? !$
+templateNEWLINE(e) ::= <<
+w.write("\n");$! todo track position in current line for tracing? !$
+>>
+
+templateIF(e) ::= <<
+if ($({expr$e.condition.type$})(e.condition)$) {
+    $e.template:templateElement()$
+$if(e.elseifPart)$
+$e.elseifPart:elseifPart();separator="\n"$
+$endif$
+$if(e.elsePart)$
+} else {
+    $e.elsePart.template:templateElement()$
+$endif$
+}
+>>
+
+elseifPart(eib) ::= <<
+} else if($({expr$eib.condition.type$})(eib.condition)$) {
+    $eib.template:templateElement()$
+>>
+
+// xxx needs work because right side is an array currently
+exprOR(a) ::= <%
+$({expr$a.left.type$})(a.left)$ || $({expr$a.right.type$})(a.right)$
+%>
+
+// xxx needs work because right side is an array currently
+exprAND(a) ::= <%
+$({expr$a.left.type$})(a.left)$ && $({expr$a.right.type$})(a.right)$
+%>
+
+exprNOT(a) ::= <%
+! $({expr$a.value.type$})(a.value)$
 %>
 
 exprATTRIBUTE(a) ::= <%
 s.$a.name$
 %>
+
+exprMEMBER_EXPR(a) ::= <%
+st.prop(st.prop(a, "foo"), "bar") xxx
+%>
+
+exprINCLUDE(a) ::= <<
+(function() {
+  var t = g.getTemplate("$a.name;format="string"$", s);
+  $a.args:includeArgs();separator="\n"$
+  return t;
+})()
+>>
+
+includeArgs(a) ::= <<
+t.add("xxx", $({expr$a.type$})(e)$);
+>>
 
 exprOptions(opts) ::= <%
 {
