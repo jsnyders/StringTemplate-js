@@ -434,32 +434,33 @@ ifstat
 		->                    ^('if' $c1 $t1? ^('elseif' $c2 $t2)* ^('else' $t3?)?) */
 
 conditional
-    = l:andConditional r:( __ "||" __ a:andConditional { return a; } )* {
-            if (r.length === 0) {
-                return l;
-            } // else
+    = l:andConditional __ "||" __ r:conditional {
             return {
                 type: "OR",
                 left: l,
-                right: r // xxx this can be an array is that a problem?
+                right: r
             };
         }
+    / andConditional
 
 andConditional
-    = l:notConditional r:( __ "&&" __ n:notConditional { return n; } )* {
-            if (r.length === 0) {
-                return l;
-            } // else
+    = l:notConditional __ "&&" __ r:andConditional {
             return {
                 type: "AND",
                 left: l,
-                right: r // xxx this can be an array is that a problem?
+                right: r
             };
         }
+    / notConditional
 
 notConditional
-    = "!" __ n:notConditional { return { type: "NOT", value: n }; }
-    / e:memberExpr { return e; }
+    = "!" __ n:notConditional {
+            return { 
+                type: "NOT",
+                value: n
+            };
+        }
+    / e:memberExpr
 
 
 exprOptions
@@ -592,7 +593,7 @@ memberExpr
                     return {
                         type: "MEMBER_EXPR",
                         object: e,
-                        properties: props
+                        properties: props  // xxx is this being an array a problem?
                     };
                 } else {
                     return e;

@@ -127,12 +127,10 @@ elseifPart(eib) ::= <<
     $eib.template:templateElement()$
 >>
 
-// xxx needs work because right side is an array currently
 exprOR(a) ::= <%
 $({expr$a.left.type$})(a.left)$ || $({expr$a.right.type$})(a.right)$
 %>
 
-// xxx needs work because right side is an array currently
 exprAND(a) ::= <%
 $({expr$a.left.type$})(a.left)$ && $({expr$a.right.type$})(a.right)$
 %>
@@ -141,12 +139,16 @@ exprNOT(a) ::= <%
 ! $({expr$a.value.type$})(a.value)$
 %>
 
+exprFUNCTION(a) ::= <%
+st.fn.$a.name$($({expr$a.arg.type$})(a.arg)$)
+%>
+
 exprATTRIBUTE(a) ::= <%
 s.$a.name$
 %>
 
 exprMEMBER_EXPR(a) ::= <%
-st.prop(st.prop(a, "foo"), "bar") xxx
+st.prop(st.prop(a, "foo"), "xxx")
 %>
 
 exprINCLUDE(a) ::= <<
