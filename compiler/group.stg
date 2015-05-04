@@ -82,12 +82,12 @@ $t : { k | $templateDef(k, t.(k))$ };separator="\n"$
 templateDef(name, t) ::= <<
 group.addTemplate("$name;format="string"$", function(s, w, rc) {
     var g = this.owningGroup;
-    $t.template:templateElement()$
+    $strip(t.template):templateElement()$
 });
 >>
 
 templateElement(e) ::= <<
-$if(e)$ $!xxx would like to clean out nulls beforehand !$
+$if(e)$
 $({template$e.type$})(e)$$endif$
 >>
 

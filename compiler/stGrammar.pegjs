@@ -40,7 +40,8 @@
         delimiterStopChar = ">",
         curGroup = options.group,
         curDict = null,
-        outside = true,
+        outside = true, // tell if we are inside or outside a template: outside<inside>outside
+        subtemplateDepth = 0, // handle nesting of subtemplates: { ... {...} ...}
         verbose = false,
         formalArgsHasOptional = false;
 
@@ -199,7 +200,7 @@ templateDef
         }
 
 formalArgs
-    = &{ formalArgsHasOptional = false; return true; } first:formalArg rest:( __ ',' __ e:formalArg { return e; } )* {
+    = &{ formalArgsHasOptional = false; return true; } first:formalArg rest:( __ "," __ e:formalArg { return e; } )* {
             return makeList(first, rest);
         }
     / { return []; }
@@ -242,7 +243,7 @@ dict
 	= __ "[" __ dictPairs "]" __
 
 dictPairs
-    = __ keyValuePair (__ ',' __ keyValuePair)* (__ ',' __ defaultValuePair)?
+    = __ keyValuePair (__ "," __ keyValuePair)* (__ "," __ defaultValuePair)?
     / __ def:defaultValuePair
 
 defaultValuePair
@@ -328,11 +329,12 @@ templateFileRaw
         }
 
 template
-    = e:(!(INDENT? START_CHAR "elseif" / INDENT? START_CHAR "else" / INDENT? START_CHAR "endif" ) i:element { return i; })* { return {
+    = e:(!(INDENT? START_CHAR "elseif" / INDENT? START_CHAR "else" / INDENT? START_CHAR "endif" / "}" ) i:element { return i; })* { return {
                 type: "TEMPLATE",
                 value: e || null // xxx should this be null or text token with empty string value
             };
         }
+
 
 element
     = &{return column() === 1;} INDENT? ST_COMMENT NEWLINE { return null; }  // a comment optionally preceded by indent
@@ -351,6 +353,7 @@ element
     / &{ outside = true; return true; } ce:compoundElement {
             return ce;
         }
+
 
 singleElement
     = TEXT
@@ -385,18 +388,26 @@ region
         ->                    ^(REGION[$x] ID template?) */
 
 
-  // ignore final INDENT before } as it's not part of outer indent
+/* 
+ * {args|template_text}
+ * {template_text}
+ *
+ * ignore final INDENT before } as it's not part of outer indent
+ */
 subtemplate
-    = '{' ( args:formalArgsNoDefault '|' )? template INDENT? '}' {
+    = "{" &{subtemplateDepth += 1; return true;} args:( a:formalArgsNoDefault "|" {return a;})? 
+        t:template INDENT? "}" {
+            subtemplateDepth -= 1;
+            outside = false;
             return {
                 type: "SUBTEMPLATE",
                 args: args,
-                template: template.value
+                template: t.value
             };
         }
 
 formalArgsNoDefault
-    = first:ID ( __ ',' __ rest:ID)* {
+    = first:ID rest:( __ "," __ a:ID {return a;})* {
             return makeList(first, rest);
         }
 
@@ -464,7 +475,7 @@ notConditional
 
 
 exprOptions
-    = first:option rest:( __ ',' __ o:option { return o; } )* {
+    = first:option rest:( __ "," __ o:option { return o; } )* {
             return makeList(first, rest);
         }
 
@@ -515,7 +526,7 @@ mapExpr
         / { return first; }
         )
         (	 /// xxx {if ($x!=null) $x.clear();} // don't keep queueing x; new list for each iteration
-            ":" x:mapTemplateRef ({$c==null}?=> ',' xs:mapTemplateRef )* {
+            ":" x:mapTemplateRef ({$c==null}?=> "," xs:mapTemplateRef )* {
                     return {
                         type
                     };
@@ -661,7 +672,7 @@ primary
 
 args
     = argExprList?
-	/ first:namedArg rest:( __ ',' __ a:namedArg { return a; } )* passThrough:( __ ',' __ pt:'...' { return true; })? {
+	/ first:namedArg rest:( __ "," __ a:namedArg { return a; } )* passThrough:( __ "," __ pt:'...' { return true; })? {
 	        var ret = {
                 type: "ARGS",
                 value: makeList(first, rest),
@@ -678,10 +689,16 @@ args
         }
 
 argExprList
-    = first:arg rest:( __ ',' __ a:arg { return a; } )* {
+    = first:arg rest:( __ "," __ a:arg { return a; } )* {
             return {
                 type: "ARGS",
                 value: makeList(first, rest)
+            };
+        }
+    / {
+            return {
+                type: "ARGS",
+                value: []
             };
         }
 
@@ -865,24 +882,22 @@ TEXT
 
 // xxx something about RCURLY needed
 TEXT_CHAR
-    = !(EOL / START_CHAR / "\\" START_CHAR / "\\\\" / ESCAPE) . {
+    = !(EOL / START_CHAR / "\\" START_CHAR / "\\\\" / ESCAPE / &{return subtemplateDepth > 0;} "}") . {
             return text();
         }
     / "\\" START_CHAR { return delimiterStartChar; }
-    / START_CHAR !("\\\\") e:ESCAPE* STOP_CHAR { return e.join(""); }
-    / START_CHAR "\\\\" STOP_CHAR WS_CHAR* EOL ch:.? { return ch; }
-
+    / START_CHAR !("\\\\") e:ESCAPE STOP_CHAR { return e; }
+    / START_CHAR "\\\\" STOP_CHAR WS_CHAR* EOL { return ""; }
 
 /*
  * \< or \> -> < or >
- * <\ >, <\n>, <\t>, <\r> -> space, line feed, tab, carriage return  - can have multiple
- * <\uhhhh> -> Unicode character (hhhh is a hex number) - can have multiple
+ * <\ >, <\n>, <\t>  -> space, line feed, tab
+ * <\uhhhh> -> Unicode character (hhhh is a hex number)
  * <\\> ([ \t])*(\r|\r\n|\n). -> .  // ignores new line
  */
 ESCAPE
     = "\\" ch:( "u" HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT { return String.fromCharCode(parseInt(text().substr(1), 16)); }
         / "n" { return "\n"; }
-        / "r" { return "\r"; }
         / "t" { return "\t"; }
         / " " { return " "; }
         / . {
