@@ -1,0 +1,9 @@
+/*
+ * test simple template include
+ */
+
+main(arg1) ::= <<
+  before $sub(arg1.first, arg1.last)$ after
+>>
+
+sub(first, last) ::= <%[$first$], [$last$]%>

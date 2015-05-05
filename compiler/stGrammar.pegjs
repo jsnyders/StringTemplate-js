@@ -707,11 +707,8 @@ arg
 
 namedArg
     = i:ID __ '=' __ v:arg {
-            return {
-                type: "ARG",
-                name: i,
-                value: v
-            };
+            v.argName = i;
+            return v;
         }
 
 list

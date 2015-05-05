@@ -36,7 +36,7 @@ compiledGroup(g) ::= <<
  */
 function getInstance(st, group) {
     "use strict";
-
+var r;
 group.name = "$g.fileName;format="string"$";
 
 $imports(g.imports)$
@@ -80,11 +80,19 @@ $t : { k | $templateDef(k, t.(k))$ };separator="\n"$
 >>
 
 templateDef(name, t) ::= <<
-group.addTemplate("$name;format="string"$", function(s, w, rc) {
+r = function(s, w, rc) {
     var g = this.owningGroup;
     $strip(t.template):templateElement()$
-});
+};
+r.args = [
+    $t.args:formalArgs();separator=",\n"$
+];
+group.addTemplate("$name;format="string"$", r);
 >>
+
+formalArgs(arg) ::= <%
+    { name: "$arg.name;format="string"$" }
+%>
 
 templateElement(e) ::= <<
 $if(e)$
@@ -147,20 +155,26 @@ exprATTRIBUTE(a) ::= <%
 s.$a.name$
 %>
 
+// st.prop(st.prop(a, "foo"), "xxx")
+// xxx for now assume just one property reference
 exprMEMBER_EXPR(a) ::= <%
-st.prop(st.prop(a, "foo"), "xxx")
+st.prop($({expr$a.object.type$})(a.object)$, "$first(a.properties).property;format="string"$")
 %>
 
 exprINCLUDE(a) ::= <<
 (function() {
   var t = g.getTemplate("$a.name;format="string"$", s);
-  $a.args:includeArgs();separator="\n"$
+  $a.args:{a|$includeArgs(a, i0)$};separator="\n"$
   return t;
 })()
 >>
 
-includeArgs(a) ::= <<
-t.add("xxx", $({expr$a.type$})(e)$);
+includeArgs(a, i) ::= <<
+$if(a.argName)$$\\$
+t.add("$a.argName;format="string"$", $({expr$a.type$})(a)$);
+$else$$\\$
+t.add($i$, $({expr$a.type$})(a)$);
+$endif$
 >>
 
 exprOptions(opts) ::= <%
