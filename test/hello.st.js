@@ -12,8 +12,9 @@ function getInstance(st, group) {
      hello(audience) ::= <%Hello $audience;null="is anyone there?",separator=", "$!$!this is the syntax for a comment inside a template!$
      %>
      */
-    group.addTemplate("/hello", function (s, w, rc) {
-        var g = this.owningGroup;
+    group.addTemplate("/hello", function (w, rc) {
+        var g = this.owningGroup,
+            s = this.scope;
         w.write("Hello ");
         st.write(w, g, rc, s.audience, {"null": "is anyone there?", separator: ", "});
         w.write("!\n");

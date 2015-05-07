@@ -80,8 +80,9 @@ $t : { k | $templateDef(k, t.(k))$ };separator="\n"$
 >>
 
 templateDef(name, t) ::= <<
-r = function(s, w, rc) {
-    var g = this.owningGroup;
+r = function(w, rc) {
+    var g = this.owningGroup,
+        s = this.scope;
     $strip(t.template):templateElement()$
 };
 r.args = [

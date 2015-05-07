@@ -17,8 +17,9 @@ function getInstance(st, group) {
          $endif$
      %>
      */
-    group.addTemplate("/main", function (s, w, rc) {
-        var t, g = this.owningGroup;
+    group.addTemplate("/main", function (w, rc) {
+        var t, g = this.owningGroup,
+            s = this.scope;
         w.write("Greeting ");
         // xxxst.write(w, g, rc, s.audience, {"null": "is anyone there?", separator: ", "});
         t = g.getTemplate("/sub", s);
@@ -38,8 +39,9 @@ function getInstance(st, group) {
      Template sub:
      sub(first, last) ::= <%[$first$], [$last$]%>
      */
-    group.addTemplate("/sub", function (s, w, rc) {
-        var g = this.owningGroup;
+    group.addTemplate("/sub", function (w, rc) {
+        var g = this.owningGroup,
+            s = this.scope;
         w.write("[");
         st.write(w, g, rc, s.first);
         w.write("], [");
