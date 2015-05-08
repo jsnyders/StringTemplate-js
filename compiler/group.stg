@@ -80,6 +80,9 @@ $t : { k | $templateDef(k, t.(k))$ };separator="\n"$
 >>
 
 templateDef(name, t) ::= <<
+//
+// Template $name$
+//
 r = function(w, rc) {
     var g = this.owningGroup,
         s = this.scope;
@@ -162,11 +165,12 @@ exprMEMBER_EXPR(a) ::= <%
 st.prop($({expr$a.object.type$})(a.object)$, "$first(a.properties).property;format="string"$")
 %>
 
+/* returns a template with arguments added */
 exprINCLUDE(a) ::= <<
 (function() {
-  var t = g.getTemplate("$a.name;format="string"$", s);
-  $a.args:{a|$includeArgs(a, i0)$};separator="\n"$
-  return t;
+    var t = g.getTemplate("$a.name;format="string"$", s);
+    $a.args:{a|$includeArgs(a, i0)$};separator="\n"$
+    return t;
 })()
 >>
 
@@ -177,6 +181,17 @@ $else$$\\$
 t.add($i$, $({expr$a.type$})(a)$);
 $endif$
 >>
+
+/* returns an array of templates where each one is an element of the input expression applied to the template */
+exprMAP(a) ::= <<
+(function() {
+    var tp = [],
+        attr = $({expr$a.expr.type$})(a.expr)$;
+    $first(a.using):{u|tp.push($({expr$u.type$})(u)$);}$ $!xxx for now only handle one level of : i.e. get rid of call to first, stst may be broken !$
+    return st.map(attr, tp);
+})()
+>>
+
 
 exprOptions(opts) ::= <%
 {
