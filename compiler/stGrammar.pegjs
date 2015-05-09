@@ -444,6 +444,7 @@ ifstat
 		   ^(INDENTED_EXPR $i ^('if' $c1 $t1? ^('elseif' $c2 $t2)* ^('else' $t3?)?))
 		->                    ^('if' $c1 $t1? ^('elseif' $c2 $t2)* ^('else' $t3?)?) */
 
+// xxx cheet sheet says parens work. test this
 conditional
     = l:andConditional __ "||" __ r:conditional {
             return {
