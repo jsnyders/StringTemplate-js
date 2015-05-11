@@ -66,9 +66,9 @@ $d:{k | $dictionary(d.(k))$}$
 >>
 
 dictionary(d) ::= <<
-group.addDictionary("$d.name;format="string"$", {
+group.addDictionary("$d.name;format="string"$", new Dictionary({
     $d.map : { k | $props(k, d.map.(k))$ };separator=",\n"$
-});
+}, $d.default$));
 >>
 
 props(k, v) ::= <<
@@ -162,7 +162,7 @@ s.$a.name$
 // st.prop(st.prop(a, "foo"), "xxx")
 // xxx for now assume just one property reference
 exprMEMBER_EXPR(a) ::= <%
-st.prop($({expr$a.object.type$})(a.object)$, "$first(a.properties).property;format="string"$")
+st.prop(g, $({expr$a.object.type$})(a.object)$, "$first(a.properties).property;format="string"$")
 %>
 
 /* returns a template with arguments added */

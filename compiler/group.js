@@ -31,18 +31,21 @@
  */
 "use strict";
 
-// xxx get these from the runtime
+var DICT_KEY_VALUE = require("../lib/Dictionary").DICT_KEY_VALUE;
+
+// These are the built-in functions supported by the runtime. 
+// xxx it may be possible to extend this set at runtime so it would require a way to add to this list during compiling
 var functions = ["first", "length", "strlen", "last", "rest", "reverse", "trunc", "strip", "trim"],
     fnMap = {};
 functions.forEach(function(fn) { fnMap[fn] = true; });
 
-// xxx get these from the runtime??? may be more the responsibility of the compiler to define them
+// These are the built-in options supported by the runtime.
 var exprOptions = ["separator", "format", "null", "wrap", "anchor"],
     exprOptionsMap = {};
 exprOptions.forEach(function(opt) { exprOptionsMap[opt] = true; });
 
-
 var groupPrototype = {
+    DICT_KEY_VALUE: DICT_KEY_VALUE,
     addTemplate: function (def) {
         var name = this.groupFolder + "/" + def.name;
         this.templates[name] = def;

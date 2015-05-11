@@ -7,6 +7,8 @@ var assert = require("assert"),
     w = require("../lib/autoIndentWriter"),
     testTemplateGroup = require("./include_stg");
 
+// xxx todo compile group first
+
 describe("test group include.stg", function() {
 
     it("should generate the expected string for template main", function() {

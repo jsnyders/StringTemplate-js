@@ -35,9 +35,9 @@ Common delimiter pairs are <> and $$. Most of the examples in this documentation
 
 todo including the start and stop delimiters in the literal template text 
 Start char \$ works
-Stop char \$ works
+xxx No need to escape the stop character 
 Backslash alone \ is fine as is \\ and \\\$.
-
+and \} is needed inside an anon sub template
 
 ## The data model
 todo

@@ -3,7 +3,8 @@
 "use strict";
 
 var assert = require("assert"),
-    st = require("../../lib/stRuntime");
+    st = require("../../lib/stRuntime"),
+    Dictionary = require("../../lib/Dictionary");
 
 var emptyGroup = function(_, g) {
     return g;
@@ -27,24 +28,31 @@ describe("stGroup", function() {
         it("should have any dictionaries added.", function() {
             var g = st.loadGroup(emptyGroup);
 
-            g.addDictionary("foo", {a:true, b:"value1"});
+            g.addDictionary("foo", new Dictionary({a:true, b:"value1"}));
             assert.deepEqual(g.dictionaries, {
                 foo: {
-                    a:true,
-                    b:"value1"
+                    map: {
+                        a: true,
+                        b: "value1"
+                    }
                 }
             }, "has dictionary added" );
-            g.addDictionary("bar", {a:"A", x:"X"});
+            g.addDictionary("bar", new Dictionary({a:"A", x:"X"}));
             assert.deepEqual(g.dictionaries, {
                 foo: {
-                    a:true,
-                    b:"value1"
+                    map: {
+                        a: true,
+                        b: "value1"
+                    }
                 },
                 bar: {
-                    a:"A",
-                    x:"X"
+                    map: {
+                        a: "A",
+                        x: "X"
+                    }
                 }
             }, "has dictionary added" );
+            // xxx test default, key
         });
         // xxx test overwrite
     });

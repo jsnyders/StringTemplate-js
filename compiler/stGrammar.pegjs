@@ -259,7 +259,7 @@ keyValue
     / v:anonymousTemplate	{ return v; }
     / TRUE                  { return true; }
     / FALSE                 { return false;}
-    / "key"                 { return 0; } // xxx need an out of band value for this
+    / "key"                 { return curGroup.DICT_KEY_VALUE; }
     / '[' __ ']'            { return []; }
 
 
@@ -771,7 +771,7 @@ RESERVED
     / "super"
     / "import"
     / "default"
-    / "key"
+/*    / "key" xxx */
     / "group"
     / "delimiters"
 // This is old v3 keyword so allow it
@@ -878,20 +878,26 @@ TEXT
             };
         }
 
-// xxx something about RCURLY needed
+/*
+ * \< -> < 
+ * <\\> ([ \t])*(\r|\r\n|\n) ->   // ignores new line
+ * don't match end of line, $, or } (if in a sub template)
+ * otherwise:  . -> .
+ */
 TEXT_CHAR
-    = !(EOL / START_CHAR / "\\" START_CHAR / "\\\\" / ESCAPE / &{return subtemplateDepth > 0;} "}") . {
+    = !(EOL / START_CHAR / "\\" START_CHAR / "\\\\" / "\\}" / ESCAPE / &{return subtemplateDepth > 0;} "}") . {
             return text();
         }
     / "\\" START_CHAR { return delimiterStartChar; }
+    / "\\\\" { return "\\"; }
+    / "\\}" { return String.fromCharCode(125); } /* pegjs doesn't like "}" in the action */
+    / "\\" { return "\\"; }
     / START_CHAR !("\\\\") e:ESCAPE STOP_CHAR { return e; }
     / START_CHAR "\\\\" STOP_CHAR WS_CHAR* EOL { return ""; }
 
 /*
- * \< or \> -> < or >
- * <\ >, <\n>, <\t>  -> space, line feed, tab
+ * <\ >, <\n>, <\t>  -> space, new line, tab
  * <\uhhhh> -> Unicode character (hhhh is a hex number)
- * <\\> ([ \t])*(\r|\r\n|\n). -> .  // ignores new line
  */
 ESCAPE
     = "\\" ch:( "u" HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT { return String.fromCharCode(parseInt(text().substr(1), 16)); }

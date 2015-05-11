@@ -22,6 +22,12 @@ describe("stRuntime", function() {
     // xxx internal write
     // xxx internal prop
 
+    describe("internal prop dictionary access", function() {
+        it("should return dictionary key value.", function() {
+            // xxx
+        });
+    });
+
     describe("internal built-in function first", function() {
         it("should return first element of an array.", function() {
             var first = getST().fn.first,

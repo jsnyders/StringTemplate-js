@@ -3,13 +3,13 @@
 "use strict";
 
 var assert = require("assert"),
-    Template = require("../../lib/stTemplate");
+    Template = require("../../lib/Template");
     
 var group = {};
 
 var render = function(w, c) { return 0; };
 
-describe("stTemplate", function() {
+describe("Template", function() {
 
     describe("create template", function() {
         it("should be empty.", function() {

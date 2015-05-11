@@ -23,15 +23,15 @@ function getInstance(st, group) {
         w.write("Greeting ");
         // xxxst.write(w, g, rc, s.audience, {"null": "is anyone there?", separator: ", "});
         t = g.getTemplate("/sub", s);
-        t.add("first", st.prop(s.arg1, "first")); // xxx should be positional
-        t.add("last", st.prop(s.arg1, "last")); // xxx should be positional
+        t.add("first", st.prop(g, s.arg1, "first")); // xxx should be positional
+        t.add("last", st.prop(g, s.arg1, "last")); // xxx should be positional
         t.write(w, rc);
         w.write("\n");
         w.write("Body");
         w.write("\n");
-        if (st.prop(s.arg1, "hasClosing")) {
+        if (st.prop(g, s.arg1, "hasClosing")) {
             w.write("Closing ");
-            st.write(w, g, rc, st.prop(s.arg1, "closing"));
+            st.write(w, g, rc, st.prop(g, s.arg1, "closing"));
         }
     }); // xxx need info about args, perhaps add as properties of the function
 
