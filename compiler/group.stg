@@ -30,6 +30,8 @@
  */
 
 compiledGroup(g) ::= <<
+var path = require("path");
+var base = path.dirname(module.filename);
 /*
  * Template group $g.fileName$
  * Compiled on $g.date$
@@ -48,6 +50,7 @@ $templates(g.templates)$
 $aliases(g.aliases)$
 return group;
 }
+getInstance.base = base;
 
 module.exports = getInstance;
 >>
@@ -57,7 +60,7 @@ $im:importFile()$
 >>
 
 importFile(file) ::= <<
-group.addImport("$file;format="string"$");
+group.addImport(st.loadImport(base, "$file;format="string"$"));
 
 >>
 
@@ -66,7 +69,7 @@ $d:{k | $dictionary(d.(k))$}$
 >>
 
 dictionary(d) ::= <<
-group.addDictionary("$d.name;format="string"$", new Dictionary({
+group.addDictionary("$d.name;format="string"$", new st.Dictionary({
     $d.map : { k | $props(k, d.map.(k))$ };separator=",\n"$
 }, $d.default$));
 >>

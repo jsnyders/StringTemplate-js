@@ -3,6 +3,8 @@
 "use strict";
 
 var assert = require("assert"),
+    path = require("path"),
+    Dictionary = require("../../lib/Dictionary"),
     st = require("../../lib/stRuntime");
 
 var emptyGroup = function(_, g) {
@@ -21,6 +23,26 @@ describe("stRuntime", function() {
 
     // xxx internal write
     // xxx internal prop
+
+    describe("internal Dictionary", function() {
+        // NOTE this relies on the existence of testGroup_stg.js 
+        it("should expose the Dictionary class.", function() {
+            var st = getST();
+
+            assert.strictEqual(st.Dictionary, Dictionary, "It is a dictionary class");
+        });
+    });
+
+    describe("internal loadImport", function() {
+        // NOTE this relies on the existence of testGroup_stg.js 
+        it("should return an loaded group.", function() {
+            var st = getST();
+            var g = st.loadImport(path.dirname(path.dirname(module.filename)), "testGroup.stg");
+            // test to see if it looks like a group
+            assert.strictEqual(g.TEMPLATE_FILE_EXTENSION, ".st", "has file extension constant");
+            assert.strictEqual(typeof g.getTemplate, "function", "has getTemplate function");
+        });
+    });
 
     describe("internal prop dictionary access", function() {
         it("should return dictionary key value.", function() {

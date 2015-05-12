@@ -1,0 +1,111 @@
+/*
+ * This is a meaningless template just intended to test a number of features of the StringTemplate language
+ */
+
+import "include.stg"
+
+dict1 ::= [
+   "str": "A",
+   "T": true,
+   "F": false,
+   "big": <<big string>>,
+   // xxx?
+   "big2": <%
+   big
+   string without new lines
+   %>,
+   "template": {value of big is: $dict1.big$},
+   "key": key // not very useful
+]
+
+dict2 ::= [
+   "str": "B",
+   "default": "value of key default",
+   default: "X"
+]
+
+dict3 ::= [
+   "str": "C",
+   "emptyList": [],
+   default: key
+]
+
+main(names,conditions) ::= <<
+$!comment on line alone doesn't add newline !$
+    $!comment on line alone doesn't add newline even if indented!$
+The { and } should be handled as regular text
+    $testEscapes()$
+    $testLiterals()$
+    $testDictionaryAccess()$
+    $names:simple();separator="\n"$
+$conditions(conditions)$
+Make sure can call template in imported group: $sub("a", "b")$
+>>
+
+
+testEscapes() ::= <<
+Test Escapes:
+Start char \$ works
+Backslash alone \ is fine as is \\ and \\\$.
+Backslash bracket (\\}) is also used for \} inside anon templates ${ don't end yet\} ok now end}$
+  Tab$\t$escape
+Space$\ $escape
+Newline$\n$escape
+Unicode$\u00BC$$\u00BB$escape for 1/4 \>>
+Skip newline$\\$
+This should not be at the start of a line
+
+>>
+
+testLiterals() ::= <<
+Test Literals:
+This is true: $true$.
+This is false: $false$.
+This is a string: $"just a string"$.
+This is an empty list/array: $[]$.
+This is a list of literals: $[true, false, "string", []]$.
+
+>>
+
+testDictionaryAccess() ::= <<
+Test dictionary access
+$dict1.str$ is A
+$dict1.T$ is true
+$dict1.F$ is false
+$dict1.big$ is big string
+$dict1.big2$ is big string without new lines
+$dict1.template$ is value of big is: big string
+$dict1.key$ is key
+no such key: /$dict1.nosuch$/ /$dict1.nosuch;null="empty"$/
+$dict2.str$ is B
+$dict2.("default")$ is X not value of key default $! can't access a dict entry with key default !$
+$dict2.nosuch$ is X
+$dict3.("str")$ is C
+empty list /$dict3.emptyList$/
+$dict3.foobar$ is foobar
+
+>>
+
+simple(arg1) ::= <<
+Greeting: $\\$
+$if(arg1.hasTitle)$$\\$
+$arg1.title$ $\\$
+$endif$$sub(arg1.first, arg1.last)$
+    Body
+>>
+
+sub(first, last) ::= <%[$first$], [$last$]%>
+
+conditions(tests) ::= <<
+    With $tests:{k| $k$ = $tests.(k)$};separator=", "$
+    $if(!tests.c1 || tests.c2 && !tests.c3)$
+       if branch        
+    $elseif(arg1.foo)$
+       first else if branch
+    $elseif(arg1.bar)$
+        second else if branch
+    $else$
+        else branch
+    $endif$
+    after if
+>>
