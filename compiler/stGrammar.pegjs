@@ -253,23 +253,31 @@ keyValuePair
     = k:STRING __ ':' __ v:keyValue __ { curDict.map[k.value] = v; }
 
 keyValue
-    = v:BIGSTRING           { return v.value; }
-    / v:BIGSTRING_NO_NL     { return v.value; }
-    / v:STRING              { return v.value; }
-    / v:anonymousTemplate	{ return v; }
-    / TRUE                  { return true; }
-    / FALSE                 { return false;}
-    / "key"                 { return curGroup.DICT_KEY_VALUE; }
-    / '[' __ ']'            { return []; }
+    = v:BIGSTRING           { return v; } // xxx need to turn this into a template
+    / v:BIGSTRING_NO_NL     { return v; } // xxx need to turn this into a template
+    / v:STRING              { return v; }
+    / v:anonymousTemplate   { return v; } // xxx 
+    / TRUE                  { return { type: "BOOLEAN", value: true }; }
+    / FALSE                 { return { type: "BOOLEAN", value: false }; }
+    / "key"                 { return { type: "DICT_KEY_VALUE", value: null }; }
+    / '[' __ ']'            { return { type: "EMPTY_LIST", value: null }; }
 
 
-// xxx this is very broken
+/* 
+ * Anonymous template
+ *
+ * {template_text}
+ */
 anonymousTemplate
-    = "{" (!"}" .)* "}" { return {
+    = "{" &{subtemplateDepth += 1; return true;} 
+        t:template "}" {
+            subtemplateDepth -= 1; // xxx is this subtemplate depth stuff needed?
+            return {
                 type: "ANON_TEMPLATE",
-                value: text() // xxx
+                value: t.value // xxx
             };
         }
+
 
 /*
  * TEMPLATE FILE
@@ -389,6 +397,8 @@ region
 
 
 /* 
+ * Anonymous sub template
+ *
  * {args|template_text}
  * {template_text}
  *
@@ -650,7 +660,7 @@ includeExpr
 /*
  * true
  * false
- * <attriburte>
+ * <attribute>
  * "string"
  * xxx
  */
@@ -662,7 +672,7 @@ primary
                 name: i.value
             };
         }
-    / s:STRING { return s.value; }
+    / s:STRING { return s; }
     / t:subtemplate { return t.value; }
     / list
 //xxx    |	{$conditional.size()>0}?=>  '('! conditional ')'!
@@ -824,8 +834,8 @@ BIGSTRING_NO_NL "big string"
     = "<%" (!"%>" .)* "%>" {
             var txt = text();
             return {
-                type: "BIGSTRING_NO_NL", // xxx consider "BIGSTRING"
-                value: {
+                type: "BIGSTRING_NO_NL",
+                value: { // xxx
                     ignoreNewLines: true,
                     // %\> is the escape to avoid end of string
                     string: txt.substring(2, txt.length - 2).replace(/\%\\>/g, "%>")

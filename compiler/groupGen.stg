@@ -30,12 +30,13 @@
  */
 
 compiledGroup(g) ::= <<
-var path = require("path");
-var base = path.dirname(module.filename);
 /*
  * Template group $g.fileName$
  * Compiled on $g.date$
  */
+var path = require("path");
+var base = path.dirname(module.filename);
+
 function getInstance(st, group) {
     "use strict";
 var r;
@@ -65,17 +66,17 @@ group.addImport(st.loadImport(base, "$file;format="string"$"));
 >>
 
 dictionaries(d) ::= <<
-$d:{k | $dictionary(d.(k))$}$
+$d:{k | $dictionary(d.(k))$};separator="\n"$
 >>
 
 dictionary(d) ::= <<
 group.addDictionary("$d.name;format="string"$", new st.Dictionary({
-    $d.map : { k | $props(k, d.map.(k))$ };separator=",\n"$
-}, $d.default$));
+    $d.map : {k | $props(k, d.map.(k))$};separator=",\n"$
+}$if(d.default)$, $({value$d.default.type$})(d.default.value)$$endif$));
 >>
 
 props(k, v) ::= <<
-    $k;format="key"$: $v$
+    $k;format="key"$: $({value$v.type$})(v.value)$
 >>
 
 templates(t) ::= <<
@@ -205,6 +206,20 @@ exprOptions(opts) ::= <%
 exprOption(k, v) ::= <%
     "$k;format="string"$": "$v;format="string"$"
 %>
+
+valueBOOLEAN(v) ::= <<$v$>>
+
+valueSTRING(v) ::= <<"$v;format="string"$">>
+
+/*xxx*/
+valueBIGSTRING(v) ::= <<"$v;format="string"$">>
+
+/*xxx*/
+valueBIGSTRING_NO_NL(v) ::= <<"$v;format="string"$">>
+
+valueDICT_KEY_VALUE(v) ::= <<st.Dictionary.DICT_KEY_VALUE>>
+
+valueEMPTY_LIST(v) ::= <<[]>>
 
 aliases(a) ::= <<
 $a : { k | $alias(k, a.(k))$ }$

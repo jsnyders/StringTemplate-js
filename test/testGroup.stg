@@ -8,7 +8,9 @@ dict1 ::= [
    "str": "A",
    "T": true,
    "F": false,
-   "big": <<big string>>,
+   "test template": <<What is attr a? $a$>>,
+   "big": <<big string 
+and it is a $\u00BB$ template >>,
    // xxx?
    "big2": <%
    big
@@ -36,7 +38,9 @@ $!comment on line alone doesn't add newline !$
 The { and } should be handled as regular text
     $testEscapes()$
     $testLiterals()$
-    $testDictionaryAccess()$
+    $testDictionaryAccess("foo")$
+    $testDictionaryAccessAlt("bar")$
+    $testDictionaryAccessAlt("baz")$
     $names:simple();separator="\n"$
 $conditions(conditions)$
 Make sure can call template in imported group: $sub("a", "b")$
@@ -67,14 +71,14 @@ This is a list of literals: $[true, false, "string", []]$.
 
 >>
 
-testDictionaryAccess() ::= <<
-Test dictionary access
+testDictionaryAccess(a) ::= <<
+Test dictionary access:
 $dict1.str$ is A
 $dict1.T$ is true
 $dict1.F$ is false
-$dict1.big$ is big string
+$dict1.big$ is big string\nand it is a » template
 $dict1.big2$ is big string without new lines
-$dict1.template$ is value of big is: big string
+$dict1.template$ is value of big is: big string\nand it is a » template
 $dict1.key$ is key
 no such key: /$dict1.nosuch$/ /$dict1.nosuch;null="empty"$/
 $dict2.str$ is B
@@ -83,7 +87,12 @@ $dict2.nosuch$ is X
 $dict3.("str")$ is C
 empty list /$dict3.emptyList$/
 $dict3.foobar$ is foobar
+$dict1.("test template")$
+>>
 
+testDictionaryAccessAlt(a) ::= <<
+Test dictionary access with different value of attr a:
+$dict1.("test template")$
 >>
 
 simple(arg1) ::= <<

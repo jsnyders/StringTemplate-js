@@ -42,7 +42,7 @@ describe("test group test", function() {
         t.write(writer);
         assert.strictEqual(writer.toString(), "Greeting [A], [B]\nBody\nClosing good day", "got expected rendered text");
     });
-    
+
     it("should xxx", function() {
         var data = {
             "names": [
