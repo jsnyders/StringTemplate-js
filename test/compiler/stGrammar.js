@@ -105,7 +105,10 @@ describe("stGrammar", function() {
                     d1: {
                         default: null,
                         map: {
-                            val1: "foo"
+                            val1: {
+                                type: "STRING",
+                                value: "foo"
+                            }
                         },
                         name: "d1"
                     }

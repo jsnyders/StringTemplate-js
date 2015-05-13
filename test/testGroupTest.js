@@ -72,12 +72,12 @@ describe("test group test", function() {
             writer = w.makeWriter();
 
         t = group.getTemplate("/main");
-        assert.notStrictEqual(t, null, "found a template");
-        t.add("names", data.names);
-        t.add("conditions", data.conditions);
-        t.write(writer);
-        console.log("xxx");
-        console.log(writer.toString());
+//        assert.notStrictEqual(t, null, "found a template");
+//        t.add("names", data.names);
+//        t.add("conditions", data.conditions);
+//        t.write(writer);
+//        console.log("xxx");
+//        console.log(writer.toString());
         
     });
 });
