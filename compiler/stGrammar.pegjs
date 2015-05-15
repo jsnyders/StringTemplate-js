@@ -665,8 +665,8 @@ includeExpr
  * xxx
  */
 primary
-    = TRUE { return true; }
-    / FALSE { return false; }
+    = TRUE { return { type: "BOOLEAN", value: true }; }
+    / FALSE { return { type: "BOOLEAN", value: false }; }
     / i:ID { return {
                 type: "ATTRIBUTE",
                 name: i.value

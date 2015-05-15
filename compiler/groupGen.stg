@@ -196,6 +196,13 @@ exprMAP(a) ::= <<
 })()
 >>
 
+exprBOOLEAN(a) ::= <<$a.value$>>
+
+exprSTRING(a) ::= <<"$a.value;format="string"$">>
+
+exprLIST(a) ::= <<[ $a.value:listItem();separator=", "$ ]>>
+
+listItem(item) ::= <<$({expr$item.type$})(item)$>>
 
 exprOptions(opts) ::= <%
 {
