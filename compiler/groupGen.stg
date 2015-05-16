@@ -204,6 +204,15 @@ exprLIST(a) ::= <<[ $a.value:listItem();separator=", "$ ]>>
 
 listItem(item) ::= <<$({expr$item.type$})(item)$>>
 
+exprSUBTEMPLATE(a) ::= <<st.makeSubTemplate(group, function(w, rc) {
+         var g = this.owningGroup,
+             s = this.scope;
+         $strip(a.template):templateElement()$
+     }, [
+        $a.args:formalArgs();separator=",\n"$
+     ])>>
+
+
 exprOptions(opts) ::= <%
 {
     $opts:{o|$exprOption(o.name, o.value)$};separator=",\n"$
@@ -218,11 +227,11 @@ valueBOOLEAN(v) ::= <<$v$>>
 
 valueSTRING(v) ::= <<"$v;format="string"$">>
 
-/*xxx*/
-valueBIGSTRING(v) ::= <<"$v;format="string"$">>
-
-/*xxx*/
-valueBIGSTRING_NO_NL(v) ::= <<"$v;format="string"$">>
+valueANON_TEMPLATE(v) ::= <<st.makeAnonTemplate(group, function(w, rc) {
+        var g = this.owningGroup,
+            s = this.scope;
+        $strip(v):templateElement()$
+    })>>
 
 valueDICT_KEY_VALUE(v) ::= <<st.Dictionary.DICT_KEY_VALUE>>
 

@@ -116,5 +116,9 @@ conditions(tests) ::= <<
     $else$
         else branch
     $endif$
-    after if
+    after first if
+    $if(!((tests.c1 || tests.c2) && !tests.c3))$
+        second if branch
+    $endif$
+    after second if
 >>

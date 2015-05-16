@@ -42,6 +42,7 @@
         curDict = null,
         outside = true, // tell if we are inside or outside a template: outside<inside>outside
         subtemplateDepth = 0, // handle nesting of subtemplates: { ... {...} ...}
+        inConditional = false,
         verbose = false,
         formalArgsHasOptional = false;
 
@@ -207,11 +208,11 @@ formalArgs
 
 formalArg
     = name:ID defaultValue:( __ '=' __
-            v:( s:STRING {return s.value;}
-                /*xxx|ANONYMOUS_TEMPLATE*/
-                / TRUE { return true; }
-                / FALSE { return false; }
-                / "[" __ "]" { return []; } ) {
+            v:( STRING
+                / anonymousTemplate
+                / TRUE
+                / FALSE
+                / EMPTY_LIST ) {
                         formalArgsHasOptional = true;
                         return v;
                     }
@@ -253,14 +254,24 @@ keyValuePair
     = k:STRING __ ':' __ v:keyValue __ { curDict.map[k.value] = v; }
 
 keyValue
-    = v:BIGSTRING           { return v; } // xxx need to turn this into a template
-    / v:BIGSTRING_NO_NL     { return v; } // xxx need to turn this into a template
-    / v:STRING              { return v; }
-    / v:anonymousTemplate   { return v; } // xxx 
-    / TRUE                  { return { type: "BOOLEAN", value: true }; }
-    / FALSE                 { return { type: "BOOLEAN", value: false }; }
-    / "key"                 { return { type: "DICT_KEY_VALUE", value: null }; }
-    / '[' __ ']'            { return { type: "EMPTY_LIST", value: null }; }
+    = v:BIGSTRING {
+            return {
+                type: "ANON_TEMPLATE",
+                value: parseTemplate(v.value).value
+            };
+        }
+    / v:BIGSTRING_NO_NL {
+            return {
+                type: "ANON_TEMPLATE",
+                value: parseTemplate(v.value).value
+            };
+        }
+    / STRING
+    / anonymousTemplate 
+    / TRUE
+    / FALSE
+    / "key" { return { type: "DICT_KEY_VALUE", value: null }; }
+    / EMPTY_LIST
 
 
 /* 
@@ -274,7 +285,7 @@ anonymousTemplate
             subtemplateDepth -= 1; // xxx is this subtemplate depth stuff needed?
             return {
                 type: "ANON_TEMPLATE",
-                value: t.value // xxx
+                value: t.value
             };
         }
 
@@ -422,10 +433,14 @@ formalArgsNoDefault
         }
 
 ifstat
-	= i:INDENT? START "if" __ "(" __ c:conditional __ ")" STOP /*xxx{if (input.LA(1)!=NEWLINE) indent=$i;} */
+	= i:INDENT? START "if" __ "(" __ 
+	            &{inConditional = true; return true;} c:conditional &{inConditional = false; return true;}
+	             __ ")" STOP /*xxx{if (input.LA(1)!=NEWLINE) indent=$i;} */
         t:template
         ei:( !(INDENT? START_CHAR "else" STOP_CHAR / INDENT? START_CHAR "endif" STOP_CHAR)
-            INDENT? START "elseif" __ "(" __ c:conditional __ ")" STOP t:template {
+            INDENT? START "elseif" __ "(" __ 
+                    &{inConditional = true; return true;} c:conditional &{inConditional = false; return true;} 
+                    __ ")" STOP t:template {
                 return {
                     type: "ELSEIF",
                     condition: c,
@@ -454,7 +469,6 @@ ifstat
 		   ^(INDENTED_EXPR $i ^('if' $c1 $t1? ^('elseif' $c2 $t2)* ^('else' $t3?)?))
 		->                    ^('if' $c1 $t1? ^('elseif' $c2 $t2)* ^('else' $t3?)?) */
 
-// xxx cheet sheet says parens work. test this
 conditional
     = l:andConditional __ "||" __ r:conditional {
             return {
@@ -662,24 +676,40 @@ includeExpr
  * false
  * <attribute>
  * "string"
- * xxx
+ * {sub template}
+ * [ expr, expr, ... ]
+ * if currently parsing a condition
+ *    ( conditional )
+ * else
+ *    (expr)
+ *    (expr)(args...)
  */
 primary
-    = TRUE { return { type: "BOOLEAN", value: true }; }
-    / FALSE { return { type: "BOOLEAN", value: false }; }
+    = TRUE
+    / FALSE
     / i:ID { return {
                 type: "ATTRIBUTE",
                 name: i.value
             };
         }
     / s:STRING { return s; }
-    / t:subtemplate { return t.value; }
+    / subtemplate
     / list
-//xxx    |	{$conditional.size()>0}?=>  '('! conditional ')'!
-//    |	{$conditional.size()==0}?=> lp='(' expr ')'
-//        (	'(' argExprList? ')'		        -> ^(INCLUDE_IND[$lp] expr argExprList?)
-//        |										-> ^(TO_STR[$lp] expr)
-//        )
+    / &{return inConditional;} "(" c:conditional ")" { return c }
+    / &{return !inConditional;} "(" e:expr ")" a:(	"(" a:argExprList? ")" { return a; } )? {
+            if (a) {
+                return {
+                    type: "INCLUDE_IND",
+                    expr: e,
+                    args: a
+                };
+            } else {
+                return {
+                    type: "TO_STR",
+                    expr:  e
+                };
+            }
+        }
 
 args
     = argExprList?
@@ -757,7 +787,7 @@ __ "white space"
     = (WS_CHAR / EOL / COMMENT / LINE_COMMENT )*
 
 /*
- * xxx when defining a template / is not allowed but in a template when referencing a template it is.
+ * xxx when defining a template "/" is not allowed but in a template when referencing a template it is.
  */
 ID	"identifier"
 	= !(RESERVED) [a-zA-Z_/] [a-zA-Z_/0-9]* {
@@ -789,10 +819,13 @@ RESERVED
 // The functions need to be included as identifiers because they are tested to be functions later
 
 TRUE
-    = "true" { return { type: "TRUE" }; }
+    = "true" { return { type: "BOOLEAN", value: true }; }
 
 FALSE
-    = "false" { return { type: "FALSE" }; }
+    = "false" { return { type: "BOOLEAN", value: false }; }
+
+EMPTY_LIST
+    = '[' __ ']' { return { type: "EMPTY_LIST", value: null }; }
 
 STRING "string"
     = '"' chars:STRING_CHAR* '"' {
