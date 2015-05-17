@@ -594,7 +594,7 @@ mapTemplateRef
             return {
                 type: "INCLUDE",
                 templateName: i.value,
-                args: a,
+                args: a.value,
             };
         }
     / subtemplate
@@ -661,7 +661,7 @@ includeExpr
     / i:ID '(' a:args ')' {
              return {
                  type: "INCLUDE",
-                 name: i.value,
+                 templateName: i.value,
                  args: a.value,
                  argsPassThrough: a.passThrough
              };

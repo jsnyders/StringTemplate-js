@@ -172,7 +172,7 @@ st.prop(g, $({expr$a.object.type$})(a.object)$, "$first(a.properties).property;f
 /* returns a template with arguments added */
 exprINCLUDE(a) ::= <<
 (function() {
-    var t = g.getTemplate("$a.name;format="string"$", s);
+    var t = g.getTemplate("$a.templateName;format="string"$", s);
     $a.args:{a|$includeArgs(a, i0)$};separator="\n"$
     return t;
 })()
@@ -220,7 +220,7 @@ exprOptions(opts) ::= <%
 %>
 
 exprOption(k, v) ::= <%
-    "$k;format="string"$": "$v;format="string"$"
+    $k;format="key"$: $({expr$v.type$})(v);format="string"$
 %>
 
 valueBOOLEAN(v) ::= <<$v$>>
