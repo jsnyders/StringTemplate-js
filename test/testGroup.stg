@@ -51,7 +51,7 @@ testEscapes() ::= <<
 Test Escapes:
 Start char \$ works
 Backslash alone \ is fine as is \\ and \\\$.
-Backslash bracket (\\}) is also used for \} inside anon templates ${ don't end yet\} ok now end}$
+Backslash bracket (\\}) is also \{ used for \} } inside anon templates ${ don't end yet\} ok now end}$
   Tab$\t$escape
 Space$\ $escape
 Newline$\n$escape
@@ -66,6 +66,7 @@ Test Literals:
 This is true: $true$.
 This is false: $false$.
 This is a string: $"just a string"$.
+This is a string: $"a string with escapes cr [\r] lf [\n] tab [\t] [\b] [\\] [\"] "$.
 This is an empty list/array: $[]$.
 This is a list of literals: $[true, false, "string", []]$.
 
