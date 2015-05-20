@@ -24,11 +24,14 @@ the output.
 
 StringTemplate templates enforce a separation between the template and the model (this is also known as model view 
 separation). Templates cannot implement any business logic*. The template cannot modify the data model. 
-Processing the template produces no side effects. Templates do have a constructs for if/else if/else conditionals, 
-implicit looping over arrays/lists and the keys/properties of a map/object, a small number of functions that operate
-on strings and arrays, a few options to control the output rendering, and calling templates with arguments.
-These features are necessary for the efficient generation of output text. They are not sufficient to implement business
-logic.
+Processing the template produces no side effects. Templates do have a constructs for conditionals, looping,
+a small number of built-in functions, a few options to control the output rendering, and calling templates with
+arguments. These features are necessary for the efficient generation of output text. 
+They are not sufficient to implement business logic.
+
+These claims of strict separation apply to the StringTemplate language. It is possible to abuse the API such that
+side effects or data modifications are possible. These are faults of the application implementation and not
+StringTempalte. 
 
 \* One place where it could be argued that templates allow business logic is in conditional expressions because
 they allow boolean operators: and, or, and not. These operators are for convenience and provide very little opportunity
@@ -93,12 +96,12 @@ To get this output | Enter this in the template
  `\}`              | `\\\}`
  `}`               | `\}`
 
-The last tow only apply in a sub template.
+The last two only apply in a sub template.
 
 xxx leave >> and %> escapes to later or include now?
 
 
-## The data model
+## The Data Model
 StringTemplate has very few data types. Most of how it deals with the data model is implementation specific. What it 
 does know about is the shape of the data. Data can be one of the following shapes:
 
@@ -115,46 +118,65 @@ does know about is the shape of the data. Data can be one of the following shape
  a property reference, access, or lookup. Depending on the context StringTemplate can also iterate over the 
  properties of an object.
 
+The data types that StringTemplate deals with explicitly are:
+
+ * Templates
+ * Strings
+ * Lists (arrays)
+ * Booleans
+ * Dictionaries
+
+It is also aware of, but has no representation for, the special value null.
 
 xxx todo how each is handled
-scalars turned into strings
-arrays always iterated over and each 
-special case for iterating over keys of a map
 
-how data is supplied to the processor: dict, template arguments, literals
+xxx how data is supplied to the processor: dict, template arguments, literals
 
 ## Literals
 Template expressions may include the following literals:
 
 * The boolean values `true` and `false`.
 
-* Strings. Sequences of characters enclosed in double quotes. Inside the double quotes these escape sequences
+* Strings. Strings are sequences of characters enclosed in double quotes. Inside the double quotes these escape sequences
 are supported to include special characters:
+
+    - `\t` tab
     - `\r` charage return
     - `\n` line feed
     - `\"` double quote
     - `\\` single back slash
 
-* Lists 
-$true$
-$false$
-$"string"$
+* Lists. Lists (also known as arrays) are comma separated expressions enclosed in square brackets. For example
+an empty list is `[ ]`. A list of strings would look like this: `[ "a", "b", "c" ]`. 
 
-Lists
- []
- [expr1, expr2,...]
+Note that there is no literal representation of numbers.
 
-## Character escape expressions
+It may seem unnecessary to have these literals. After all a template such as this:
+
+```
+My name is $"Sam"$.
+```
+
+could more easily be given as:
+
+```
+My name is Sam.
+```
+
+Where these literals come in handy is in contexts such as passing template parameters, dictionaries, options and
+conditions each of which will be discussed below.
+
+## Character Escape Expressions
 The following expressions are used to insert special characters in the output:
 
  * `$\ $` insert a single space
  * `$\n$` insert a new line. This will be converted to the appropriate line ending character or character sequence
+ by the implementation according to the Operating System conventions.
  * `$\t$` insert a tab
  * `$\uhhhh$` insert a Unicode character where *hhhh* is the hex value of the Unicode character
 
 The expression `$\\$` will suppress the following new line. This allows inserting a new line in the template for
 better readability without including that new line in the output. 
-
 
 ## Comments
 Inside templates you can include comments as follows:
@@ -163,20 +185,62 @@ Inside templates you can include comments as follows:
 $!this is a comment!$
 ```
 
-See Groups below for comments you can have outside of templates.
+See section Groups below for comments you can have outside of templates.
 
 ## Expressions
+This section describes each of the possible expressions.
 
 ### Attribute Expressions
+The simplest expression is an attribute expression. An attribute is simply the name or identifier of a data value.
+An attribute identifier starts with an alphabetic character or underscore followed by zero or more alphabetic characters
+underscores or digits.
+
+An attribute identifier matches this regular expression: `[a-zA-Z_][a-zA-Z_0-9]*`
+
+For example:
+
+```
+$hobbit$
+```
+
+If the value of the hobbit attribute is "Bilbo Baggins" then the above expression results in
+
+```
+Bilbo Baggins
+```
+
+If the value of an attribute is null then the result is an empty string. If the value of an attribute is an array
+the result is a concatenation of all the values in the array. So using JSON syntax for arrays, suppose the
+attribute hobbits contains `[ "Samwise", "Frodo", "Bilbo" ]` then the expression
+
+```
+$hobbits$
+```
+
+results in
+
+```
+SamwiseFrodoBilbo
+```
+
+This may not seem very useful but when we get to Map expressions and Options you will see how to make better
+use of arrays.
 
 attribute reference
 property reference
 attribute indirect
 property indirect
 
-include
-map
-zip
+
+### Include
+xxx todo
+
+### Map
+xxx todo
+
+
+### Zip
+xxx todo
 
 ### Expression Options
 
