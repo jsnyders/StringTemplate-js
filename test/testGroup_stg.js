@@ -1,6 +1,6 @@
 /*
  * Template group testGroup
- * Compiled on Sat May 16 2015 23:18:02 GMT-0400 (EDT)
+ * Compiled on Thu May 21 2015 00:13:01 GMT-0400 (EDT)
  */
 var path = require("path");
 var base = path.dirname(module.filename);
@@ -32,7 +32,6 @@ group.addDictionary("dict1", new st.Dictionary({
         big2: st.makeAnonTemplate(group, function(w, rc) {
             var g = this.owningGroup,
                 s = this.scope;
-            w.write("\n");
             w.pushIndentation("   ");
             w.write("big");
             w.popIndentation();
@@ -67,7 +66,6 @@ group.addDictionary("dict2", new st.Dictionary({
 r = function(w, rc) {
     var g = this.owningGroup,
         s = this.scope;
-    w.write("\n");
     w.pushIndentation("    ");
     w.write("With ");
     w.popIndentation();
@@ -142,7 +140,6 @@ group.addTemplate("/conditions", r);
 r = function(w, rc) {
     var g = this.owningGroup,
         s = this.scope;
-    w.write("\n");
     w.write("Test dictionary access:");
     w.write("\n");
     st.write(w, g, rc, st.prop(g, s.dict1, "str"));
@@ -204,7 +201,6 @@ group.addTemplate("/testDictionaryAccess", r);
 r = function(w, rc) {
     var g = this.owningGroup,
         s = this.scope;
-    w.write("\n");
     w.write("Test Literals:");
     w.write("\n");
     w.write("This is true: ");
@@ -217,6 +213,10 @@ r = function(w, rc) {
     w.write("\n");
     w.write("This is a string: ");
     st.write(w, g, rc, "just a string");
+    w.write(".");
+    w.write("\n");
+    w.write("This is a string: ");
+    st.write(w, g, rc, "a string with escapes cr [\r] lf [\n] tab [	] [b] [\\] [\"] ");
     w.write(".");
     w.write("\n");
     w.write("This is an empty list/array: ");
@@ -255,7 +255,6 @@ group.addTemplate("/sub", r);
 r = function(w, rc) {
     var g = this.owningGroup,
         s = this.scope;
-    w.write("\n");
     w.write("The { and } should be handled as regular text");
     w.write("\n");
     w.pushIndentation("    ");
@@ -340,7 +339,6 @@ group.addTemplate("/main", r);
 r = function(w, rc) {
     var g = this.owningGroup,
         s = this.scope;
-    w.write("\n");
     w.write("Greeting: ");
     if (st.prop(g, s.arg1, "hasTitle")) {
         w.write("");
@@ -371,7 +369,6 @@ group.addTemplate("/simple", r);
 r = function(w, rc) {
     var g = this.owningGroup,
         s = this.scope;
-    w.write("\n");
     w.write("Test dictionary access with different value of attr a:");
     w.write("\n");
     st.write(w, g, rc, st.prop(g, s.dict1, "valuetype"));
@@ -387,18 +384,19 @@ group.addTemplate("/testDictionaryAccessAlt", r);
 r = function(w, rc) {
     var g = this.owningGroup,
         s = this.scope;
-    w.write("\n");
     w.write("Test Escapes:");
     w.write("\n");
     w.write("Start char $ works");
     w.write("\n");
-    w.write("Backslash alone \\ is fine as is \\ and \\$.");
+    w.write("Backslash alone \\is fine. So is \\ and \\$.");
     w.write("\n");
-    w.write("Backslash bracket (\\}) is also used for } inside anon templates ");
+    w.write("Outside sub template backslash bracket (\\}) or } or } is ok by self");
+    w.write("\n");
+    w.write("Inside anon templates ");
     st.write(w, g, rc, st.makeSubTemplate(group, function(w, rc) {
              var g = this.owningGroup,
                  s = this.scope;
-             w.write(" don't end yet} ok now end");
+             w.write(" \\{ don't end yet} ok now end");
          }, [
          ]));
     w.write("\n");

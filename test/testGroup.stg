@@ -50,8 +50,9 @@ Make sure can call template in imported group: $sub("a", "b")$
 testEscapes() ::= <<
 Test Escapes:
 Start char \$ works
-Backslash alone \ is fine as is \\ and \\\$.
-Backslash bracket (\\}) is also \{ used for \} } inside anon templates ${ don't end yet\} ok now end}$
+Backslash alone \is fine. So is \\ and \\\$.
+Outside sub template backslash bracket (\\}) or \} or } is ok by self
+Inside anon templates $ { \{ don't end yet\} ok now end} $
   Tab$\t$escape
 Space$\ $escape
 Newline$\n$escape

@@ -78,6 +78,10 @@
             ignoreNewLines = true;
             template = template.string;
         }
+        if (template.charAt(0) === "\n" || (template.charAt(0) === "\r" && template.charAt(1) === "\n")) {
+            lineOffset += 1;
+        }
+        template = template.replace(/^\r?\n/, "") // remove a single leading new line if any
 
         outside = true; // just in case, make sure always start parsing a template on the outside
         try {
@@ -385,7 +389,7 @@ compoundElement
     / region
 
 exprTag
-	= START e:expr opts:( ';' o:exprOptions { return o; } )? STOP {
+	= START __ e:expr opts:( ';' o:exprOptions { return o; } )? __ STOP {
 	        var ret = {
 	            type: "EXPR",
 	            expr: e
@@ -852,7 +856,7 @@ BIGSTRING "big string"
     = "<<" chars:BIGSTRING_CHAR* ">>" {
             return {
                 type: "BIGSTRING",
-                value: chars.join("") // xxx escapes
+                value: chars.join("")
             };
         }
 
@@ -860,7 +864,7 @@ BIGSTRING_CHAR
     = !(">>" / "\\>>" / ">\\>") . { return text(); }
     / "\\>>" { return ">>"; }
     / ">\\>" { return ">>"; }
-//xxx    / EOF { error("Unterminated big string"); }
+    / EOF { error("Unterminated big string"); }
 
 // same as BIGSTRING but means ignore newlines later
 BIGSTRING_NO_NL "big string"
@@ -928,7 +932,7 @@ TEXT
  * otherwise:  . -> .
  */
 TEXT_CHAR
-    = !(EOL / START_CHAR / "\\" START_CHAR / "\\\\" / "\\}" / ESCAPE / &{return subtemplateDepth > 0;} "}") . {
+    = !(EOL / START_CHAR / "\\" START_CHAR / "\\\\" / "\\}" /  &{return subtemplateDepth > 0;} "}") . {
             return text();
         }
     / "\\" START_CHAR { return delimiterStartChar; }
