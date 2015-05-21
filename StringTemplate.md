@@ -178,6 +178,8 @@ The following expressions are used to insert special characters in the output:
 The expression `$\\$` will suppress the following new line. This allows inserting a new line in the template for
 better readability without including that new line in the output. 
 
+todo give an example
+
 ## Comments
 Inside templates you can include comments as follows:
 
@@ -195,7 +197,8 @@ The simplest expression is an attribute expression. An attribute is simply the n
 An attribute identifier starts with an alphabetic character or underscore followed by zero or more alphabetic characters
 underscores or digits.
 
-An attribute identifier matches this regular expression: `[a-zA-Z_][a-zA-Z_0-9]*`
+An attribute identifier matches this regular expression: `[a-zA-Z_][a-zA-Z_0-9]*`. Attribute identifiers are case
+sensitive.
 
 For example:
 
@@ -226,6 +229,10 @@ SamwiseFrodoBilbo
 This may not seem very useful but when we get to Map expressions and Options you will see how to make better
 use of arrays.
 
+If the attribute value is an object then you can access the values of its properties with this property
+syntax:
+
+```
 attribute reference
 property reference
 attribute indirect
