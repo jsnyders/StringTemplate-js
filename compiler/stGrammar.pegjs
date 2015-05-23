@@ -44,7 +44,7 @@
         subtemplateDepth = 0, // handle nesting of subtemplates: { ... {...} ...}
         inConditional = false,
         verbose = false,
-        ignoreNewLines = false,
+        ignoreNewLines = options.ignoreNewLines || false,
         formalArgsHasOptional = false;
 
     var logger = function(message) {
@@ -72,11 +72,11 @@
     }
 
     function parseTemplate(template) {
-        var lineOffset = line() - 1;
+        var ignoreNewLines,
+            lineOffset = line() - 1;
 
         ignoreNewLines = false;
         if (template.ignoreNewLines) {
-            console.log("xxx should be ignoring new lines");
             ignoreNewLines = true;
             template = template.string;
         }
@@ -92,6 +92,7 @@
                 group: curGroup,
                 nested: true,
                 verbose: verbose,
+                ignoreNewLines: ignoreNewLines,
                 delimiterStartChar: delimiterStartChar,
                 delimiterStopChar: delimiterStopChar
             });
@@ -388,10 +389,8 @@ singleElement
     = TEXT
     / n:NEWLINE {
             if (ignoreNewLines) {
-                console.log("xxx ignored new lines");
                 return null;
             } else {
-                console.log("xxx did not ignored new lines");
                 return n;
             }
         }

@@ -57,3 +57,6 @@ This section lists differences between this implementation and the Java referenc
 * The Java AutoIndentWriter will strip lone cr (\r) from the output. This autoIndentWriter normalizes lone cr to the 
 OS new line. A lone cr may be unlikely. One way to get one is with $"\r"$.
 
+* The Java implementation allows any start or stop delimiter even if they will later cause confusion. 
+This implementation restricts the delimiters to "#$%^&*<>"
+

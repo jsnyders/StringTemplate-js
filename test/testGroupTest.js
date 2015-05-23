@@ -67,8 +67,26 @@ describe("test group test", function() {
 
             t.write(writer);
             console.log("xxx ref testLiterals: " + refOutput);
-            console.log("xxx ref len: " + refOutput.length);
-            console.log("xxx st  len: " + writer.toString().length);
+
+            assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
+            done();
+        });
+
+    });
+
+    it("should generate same output as reference implementation for template testDictionaryAccess", function(done) {
+        var t,
+            group = st.loadGroup(testTemplateGroup),
+            writer = w.makeWriter();
+
+        getSTReferenceOutput("testGroup", "testDictionaryAccess", {"a": "value of a"}, function(refOutput) {
+            t = group.getTemplate("/testDictionaryAccess");
+            assert.notStrictEqual(t, null, "found a template");
+            t.add("a", "value of a");
+
+
+            t.write(writer);
+            console.log("xxx ref testDictionaryAccess: " + refOutput);
 
             assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
             done();

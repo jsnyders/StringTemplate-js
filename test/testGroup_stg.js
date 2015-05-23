@@ -1,6 +1,6 @@
 /*
  * Template group testGroup
- * Compiled on Fri May 22 2015 23:50:09 GMT-0400 (EDT)
+ * Compiled on Sat May 23 2015 00:38:49 GMT-0400 (EDT)
  */
 var path = require("path");
 var base = path.dirname(module.filename);
@@ -32,14 +32,8 @@ group.addDictionary("dict1", new st.Dictionary({
         big2: st.makeAnonTemplate(group, function(w, rc) {
             var g = this.owningGroup,
                 s = this.scope;
-            w.pushIndentation("   ");
             w.write("big");
-            w.popIndentation();
-            w.write("\n");
-            w.pushIndentation("   ");
             w.write("string without new lines");
-            w.popIndentation();
-            w.write("\n");
             w.write("   ");
         }),
         big: st.makeAnonTemplate(group, function(w, rc) {
@@ -202,9 +196,7 @@ r = function(w, rc) {
     var g = this.owningGroup,
         s = this.scope;
     w.write("Escape end big string no new line %>.");
-    w.write("\n");
     w.write("This is OK: <%");
-    w.write("\n");
 };
 r.args = [
 ];
