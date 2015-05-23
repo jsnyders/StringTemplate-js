@@ -1,9 +1,16 @@
 /*
  * test simple template include
  */
+delimiters "<",">"
 
 main(arg1) ::= <<
-  before $sub(arg1.first, arg1.last)$ after
+  before <sub(arg1.first, arg1.last)> after
 >>
 
-sub(first, last) ::= <%[$first$], [$last$]%>
+sub(first, last) ::= <%[<first>], [<last>]%>
+
+testEscapes3() ::= <%
+When start and stop are \< > need to escape only the start.
+This is OK: \<%
+Escape end big string no new line %\>.
+%>

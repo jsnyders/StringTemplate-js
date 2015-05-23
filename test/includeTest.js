@@ -23,7 +23,7 @@ describe("test group include.stg", function() {
             last: "Smith"
         });
         t.write(writer);
-        assert.strictEqual(writer.toString(), "\n  before [Max], [Smith] after\n", "got expected rendered text");
+        assert.strictEqual(writer.toString(), "  before [Max], [Smith] after\n", "got expected rendered text");
     });
 
 });

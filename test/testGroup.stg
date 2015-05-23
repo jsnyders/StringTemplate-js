@@ -35,7 +35,6 @@ dict3 ::= [
 main(names,conditions) ::= <<
 $!comment on line alone doesn't add newline !$
     $!comment on line alone doesn't add newline even if indented!$
-The { and } should be handled as regular text
     $testEscapes()$
     $testLiterals()$
     $testDictionaryAccess("foo")$
@@ -49,25 +48,38 @@ Make sure can call template in imported group: $sub("a", "b")$
 
 testEscapes() ::= <<
 Test Escapes:
-Start char \$ works
-Backslash alone \is fine. So is \\ and \\\$.
-Outside sub template backslash bracket (\\}) or \} or } is ok by self
-Inside anon templates $ { \{ don't end yet\} ok now end} $
+The { and } should be handled as regular textx
+Start char: \$
+Backslash alone is fine: \. It can also be doubled \\.
+To get \\\$ you need \\\\\\\$.
+Outside sub template close bracket is fine alone } or with backslash \}
+To get \} you need \\}
+Inside sub templates } needs to be escaped: $ { don't end yet\\\} still not yet\} ok now end} $
+Escape end big string \>> or >\>.
+This is OK: <<
   Tab$\t$escape
 Space$\ $escape
 Newline$\n$escape
 Unicode$\u00BC$$\u00BB$escape for 1/4 \>>
 Skip newline$\\$
 This should not be at the start of a line
+$testEscapes2()$
+$testEscapes3()$
 
 >>
+
+testEscapes2() ::= <%
+Escape end big string no new line %\>.
+This is OK: <%
+%>
 
 testLiterals() ::= <<
 Test Literals:
 This is true: $true$.
 This is false: $false$.
 This is a string: $"just a string"$.
-This is a string: $"a string with escapes cr [\r] lf [\n] tab [\t] [\b] [\\] [\"] "$.
+$! removed \r in a string because the Java impl AutoIndentWriter strips it from the output !$  
+This is a string: $"a string with escapes lf [\n] tab [\t] other char [\b] backslash [\\] double quote [\"] "$.
 This is an empty list/array: $[]$.
 This is a list of literals: $[true, false, "string", []]$.
 

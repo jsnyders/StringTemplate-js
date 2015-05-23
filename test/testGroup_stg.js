@@ -1,6 +1,6 @@
 /*
  * Template group testGroup
- * Compiled on Thu May 21 2015 00:13:01 GMT-0400 (EDT)
+ * Compiled on Fri May 22 2015 23:50:09 GMT-0400 (EDT)
  */
 var path = require("path");
 var base = path.dirname(module.filename);
@@ -196,6 +196,20 @@ r.args = [
 ];
 group.addTemplate("/testDictionaryAccess", r); 
 //
+// Template /testEscapes2
+//
+r = function(w, rc) {
+    var g = this.owningGroup,
+        s = this.scope;
+    w.write("Escape end big string no new line %>.");
+    w.write("\n");
+    w.write("This is OK: <%");
+    w.write("\n");
+};
+r.args = [
+];
+group.addTemplate("/testEscapes2", r); 
+//
 // Template /testLiterals
 //
 r = function(w, rc) {
@@ -215,8 +229,10 @@ r = function(w, rc) {
     st.write(w, g, rc, "just a string");
     w.write(".");
     w.write("\n");
+    w.write("  ");
+    w.write("\n");
     w.write("This is a string: ");
-    st.write(w, g, rc, "a string with escapes cr [\r] lf [\n] tab [	] [b] [\\] [\"] ");
+    st.write(w, g, rc, "a string with escapes lf [\n] tab [	] other char [b] backslash [\\] double quote [\"] ");
     w.write(".");
     w.write("\n");
     w.write("This is an empty list/array: ");
@@ -255,8 +271,6 @@ group.addTemplate("/sub", r);
 r = function(w, rc) {
     var g = this.owningGroup,
         s = this.scope;
-    w.write("The { and } should be handled as regular text");
-    w.write("\n");
     w.pushIndentation("    ");
     st.write(w, g, rc, (function() {
         var t = g.getTemplate("testEscapes", s);
@@ -386,19 +400,29 @@ r = function(w, rc) {
         s = this.scope;
     w.write("Test Escapes:");
     w.write("\n");
-    w.write("Start char $ works");
+    w.write("The { and } should be handled as regular textx");
     w.write("\n");
-    w.write("Backslash alone \\is fine. So is \\ and \\$.");
+    w.write("Start char: $");
     w.write("\n");
-    w.write("Outside sub template backslash bracket (\\}) or } or } is ok by self");
+    w.write("Backslash alone is fine: \\. It can also be doubled \\.");
     w.write("\n");
-    w.write("Inside anon templates ");
+    w.write("To get \\$ you need \\\\\\$.");
+    w.write("\n");
+    w.write("Outside sub template close bracket is fine alone } or with backslash }");
+    w.write("\n");
+    w.write("To get } you need \\}");
+    w.write("\n");
+    w.write("Inside sub templates } needs to be escaped: ");
     st.write(w, g, rc, st.makeSubTemplate(group, function(w, rc) {
              var g = this.owningGroup,
                  s = this.scope;
-             w.write(" \\{ don't end yet} ok now end");
+             w.write(" don't end yet\\} still not yet} ok now end");
          }, [
          ]));
+    w.write("\n");
+    w.write("Escape end big string >> or >>.");
+    w.write("\n");
+    w.write("This is OK: <<");
     w.write("\n");
     w.pushIndentation("  ");
     w.write("Tab	escape");
@@ -411,6 +435,16 @@ r = function(w, rc) {
     w.write("Unicode¼»escape for 1/4 >>");
     w.write("\n");
     w.write("Skip newlineThis should not be at the start of a line");
+    w.write("\n");
+    st.write(w, g, rc, (function() {
+        var t = g.getTemplate("testEscapes2", s);
+        return t;
+    })());
+    w.write("\n");
+    st.write(w, g, rc, (function() {
+        var t = g.getTemplate("testEscapes3", s);
+        return t;
+    })());
     w.write("\n");
     w.write("\n");
 };

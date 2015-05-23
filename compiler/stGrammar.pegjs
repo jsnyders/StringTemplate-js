@@ -44,6 +44,7 @@
         subtemplateDepth = 0, // handle nesting of subtemplates: { ... {...} ...}
         inConditional = false,
         verbose = false,
+        ignoreNewLines = false,
         formalArgsHasOptional = false;
 
     var logger = function(message) {
@@ -71,10 +72,11 @@
     }
 
     function parseTemplate(template) {
-        var ignoreNewLines = false, // xxx make use of this
-            lineOffset = line() - 1;
+        var lineOffset = line() - 1;
 
+        ignoreNewLines = false;
         if (template.ignoreNewLines) {
+            console.log("xxx should be ignoring new lines");
             ignoreNewLines = true;
             template = template.string;
         }
@@ -364,11 +366,15 @@ element
                                                                              // and immediately followed by a new line
                                                                              // is ignored including the newline
     / i:INDENT se:singleElement {
-            return {
-                type: "INDENTED_EXPR",
-                indent: i.value,
-                value: se
-            };
+            if (ignoreNewLines) {
+                return se;
+            } else {
+                return {
+                    type: "INDENTED_EXPR",
+                    indent: i.value,
+                    value: se
+                };
+            }
         }
     / &{ outside = true; return true; } se:singleElement {
             return se;
@@ -380,7 +386,15 @@ element
 
 singleElement
     = TEXT
-    / NEWLINE
+    / n:NEWLINE {
+            if (ignoreNewLines) {
+                console.log("xxx ignored new lines");
+                return null;
+            } else {
+                console.log("xxx did not ignored new lines");
+                return n;
+            }
+        }
     / ST_COMMENT { return null; }
     / exprTag
 

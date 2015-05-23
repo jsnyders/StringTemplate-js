@@ -49,3 +49,11 @@ BSD
 ## Building
 
 Additional development dependencies: need grunt-cli, mocha and pegjs installed globally
+
+
+## Known Differences
+This section lists differences between this implementation and the Java reference implementation
+
+* The Java AutoIndentWriter will strip lone cr (\r) from the output. This autoIndentWriter normalizes lone cr to the 
+OS new line. A lone cr may be unlikely. One way to get one is with $"\r"$.
+

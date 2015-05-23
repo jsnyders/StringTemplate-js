@@ -1,12 +1,12 @@
 # StringTemplate Documentation
 
-StringTemplate is a language for describing how to combine structured data with literal text. It is also a 
+StringTemplate is a language for describing how to combine literal text with structured data. It is also a 
 library that processes that language.
 
 A template system is a template processor or engine that processes the template language along with any application
 specific code needed to acquire, access or generate the data and possibly store or transmit the resulting text.
 The template processor is generally supplied as a library or program to be called by the application.
- 
+
 The purpose of a template system is to produce output text where the output is given by the input template(s).
 The templates are made up of literal text that is copied to the output as is and embedded expressions that specify what 
 data is to be inserted into the output.
@@ -77,8 +77,7 @@ the stop character (assuming it is different from the start character)
 The start character is escaped using the backslash character as follows: `\$`.
 
 As we will learn later, sub templates are delimited with { } characters so inside a sub template the closing bracket
-needs to be escaped. Again a backslash is used: `\}`. Outside a sub template the opening bracket needs to be escaped
-using `\{`.
+needs to be escaped. Again a backslash is used: `\}`.
 
 Normally you don't need to worry about escaping the backslash character but in situations where there is any ambiguity
 you will need to escape it with another backslash like this: `\\`. 
@@ -91,7 +90,6 @@ To get this output | Enter this in the template
  `\`               | `\`
  `\\`              | `\\\\`
  `\$`              | `\\\$`
- `{`               | `\{`
  `\}`              | `\\}`
  `\}`              | `\\\}`
  `}`               | `\}`
