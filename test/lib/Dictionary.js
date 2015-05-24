@@ -20,7 +20,7 @@ describe("Dictionary", function() {
         });
     });
 
-    
+
     describe("get", function() {
         it("should get values in dictionary with no default.", function() {
             var d = new Dictionary({a: "A", b: 7, c: false, foo: Dictionary.DICT_KEY_VALUE });

@@ -19,6 +19,8 @@ describe("stGroup", function() {
             assert.strictEqual(g.imports.length, 0, "no imports");
             assert.deepEqual(g.dictionaries, {}, "no dictionaries");
             assert.deepEqual(g.templates, {}, "no templates");
+            assert.deepEqual(g.renderers, {}, "no renderers");
+            assert.strictEqual(typeof g.modelAdaptors.Dictionary, "function", "has default dictionary adaptor");
             assert.strictEqual(g.TEMPLATE_FILE_EXTENSION, ".st");
             assert.strictEqual(g.GROUP_FILE_EXTENSION, ".stg");
         });
@@ -314,4 +316,31 @@ describe("stGroup", function() {
             assert.strictEqual(rfn, null, "no renderer found");
         });
     });
+
+    describe("modelAdaptor register and get", function() {
+        it("should find a function registered", function() {
+            var afn, a,
+                g = st.loadGroup(emptyGroup);
+
+            a = function(o, prop) {};
+
+            g.registerModelAdaptor("Foo", a);
+            afn = g.getModelAdaptor("Foo");
+
+            assert.strictEqual(afn, a, "found the right modelAdaptor");
+        });
+
+        it("should return null if there is no function registered for a type", function() {
+            var afn, a,
+                g = st.loadGroup(emptyGroup);
+
+            a = function(o, prop) {};
+
+            g.registerModelAdaptor("number", a);
+            afn = g.getModelAdaptor("Foo");
+
+            assert.strictEqual(afn, null, "no modelAdaptor found");
+        });
+    });
+
 });
