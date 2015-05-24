@@ -112,7 +112,7 @@ w.write("$e.value;format="string"$");
 >>
 
 templateEXPR(e) ::= <<
-st.write(w, g, rc, $({expr$e.expr.type$})(e.expr)$$if(e.options)$, $exprOptions(e.options)$$endif$);
+st.write(w, s, g, rc, $({expr$e.expr.type$})(e.expr)$$if(e.options)$, $exprOptions(e.options)$$endif$);
 >>
 
 templateINDENTED_EXPR(e) ::= <<

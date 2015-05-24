@@ -16,7 +16,7 @@ function getInstance(st, group) {
         var g = this.owningGroup,
             s = this.scope;
         w.write("Hello ");
-        st.write(w, g, rc, s.audience, {"null": "is anyone there?", separator: ", "});
+        st.write(w, s, g, rc, s.audience, {"null": "is anyone there?", separator: ", "});
         w.write("!\n");
     }); // xxx need info about args, perhaps add as properties of the function
 
