@@ -122,7 +122,7 @@ function getFileReader(baseDir, encoding) {
     };
 }
 
-function parseFile(file, writer, options) {
+function parseFile(file, baseDir, options) {
     var group = options.group,
         text = options.readFile(file);
 
@@ -132,10 +132,10 @@ function parseFile(file, writer, options) {
         logParserError(file, ex);
         return;
     }
-    generate(group, writer);
+    generate(group, baseDir);
 }
 
-function compileGroupFile(file, writer, encoding, delimiterStartChar, delimiterStopChar) {
+function compileGroupFile(file, encoding, delimiterStartChar, delimiterStopChar) {
     var baseDir = path.dirname(file),
         ext = path.extname(file);
 
@@ -146,7 +146,7 @@ function compileGroupFile(file, writer, encoding, delimiterStartChar, delimiterS
         baseDir = path.join(process.cwd(), baseDir);
         file = path.join(process.cwd(), file);
     }
-    parseFile(file, writer, {
+    parseFile(file, baseDir, {
         startRule: startRule(ext, false),
         readFile: getFileReader(baseDir, encoding), // xxx perhaps reader goes in group?
         group: makeGroup("", path.basename(file, ext)),
@@ -156,7 +156,7 @@ function compileGroupFile(file, writer, encoding, delimiterStartChar, delimiterS
     });
 }
 
-function parseDir(rootDir, writer, options) {
+function parseDir(rootDir, options) {
     var group,
         errorCount = 0;
 
@@ -206,19 +206,18 @@ function parseDir(rootDir, writer, options) {
     group = options.group;
     processDir("", rootDir);
     if (errorCount === 0) {
-        generate(group, writer);
+        generate(group, "xxx base dir");
     }
 }
 
 /**
  * xxx
  * @param dir
- * @param writer
  * @param encoding
  * @param delimiterStartChar
  * @param delimiterStopChar
  */
-function compileGroupDir(dir, writer, encoding, delimiterStartChar, delimiterStopChar) {
+function compileGroupDir(dir, encoding, delimiterStartChar, delimiterStopChar) {
     var group, parseOptions;
 
     encoding = encoding || "utf8";
@@ -231,18 +230,17 @@ function compileGroupDir(dir, writer, encoding, delimiterStartChar, delimiterSto
         delimiterStartChar: delimiterStartChar,
         delimiterStopChar: delimiterStopChar
     };
-    parseDir(dir, writer, parseOptions);
+    parseDir(dir, parseOptions);
 }
 
 /**
  * xxx
  * @param dir
- * @param writer
  * @param encoding
  * @param delimiterStartChar
  * @param delimiterStopChar
  */
-function compileRawGroupDir(dir, writer, encoding, delimiterStartChar, delimiterStopChar) {
+function compileRawGroupDir(dir, encoding, delimiterStartChar, delimiterStopChar) {
     var group, parseOptions;
 
     encoding = encoding || "utf8";
@@ -255,30 +253,48 @@ function compileRawGroupDir(dir, writer, encoding, delimiterStartChar, delimiter
         delimiterStartChar: delimiterStartChar,
         delimiterStopChar: delimiterStopChar
     };
-    parseDir(dir, writer, parseOptions);
+    parseDir(dir, parseOptions);
 }
 
-function outputAST(groupAST, writer) {
+// xxx
+function writeFile(filePath, text) {
+    fs.writeFileSync(filePath, text, {
+        mode: 420 // 0x644
+    });
+}
+
+function generate(groupAST, baseDir) {
+    var astFilename, filename;
+
+    // xxx any pre processing of parsing output needed?
     groupAST.date = (new Date()).toString();
     groupAST = {g:groupAST};
-    writer.write(JSON.stringify(groupAST, null, 4));
-}
 
-function generate(groupAST, writer) {
     if (gOutputAST) {
-        outputAST(groupAST, writer);
+        astFilename = path.join(baseDir, groupAST.g.fileName + ".stg.ast");
+        writeFile(astFilename, JSON.stringify(groupAST, null, 4));
     }
-    // xxx generate
-}
 
-/*
- * xxx this is a temp hack
- */
-var tempWriter = {
-    write: function(text) {
-        console.log(text);
-    }
-};
+    // xxx generate
+
+    filename = path.join(baseDir, groupAST.g.fileName + "_stg.js"); // xxx _stg vs _st?
+
+    // use Java STST as a separate process to generate compiled template
+    var spawn = require('child_process').spawn;
+
+    var stst = spawn("stst", ["-f", "javascript", "-o", filename, "groupGen.compiledGroup"], {
+        cwd: path.dirname(module.filename),
+        stdio: ["pipe", 1, 2]
+    });
+
+    stst.stdin.write(JSON.stringify(groupAST));
+    stst.stdin.end();
+
+    stst.on("close", function() {
+        console.log("xxx done");
+    });
+
+}
 
 function main() {
 
@@ -346,19 +362,19 @@ function main() {
 
     if (stat.isDirectory()) {
         if (argv.raw) {
-            compileRawGroupDir(inputPath, tempWriter, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
+            compileRawGroupDir(inputPath, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
         } else {
-            compileGroupDir(inputPath, tempWriter, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
+            compileGroupDir(inputPath, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
         }
     } else {
         if (argv.raw) {
-            console.log("Warning: raw option ignored when compiling a single file.");
+            console.log("Warning: raw option ignored when compiling a single file."); // xxx why would that be?
         }
         ext = path.extname(inputPath);
         if (ext === stGroup.GROUP_FILE_EXTENSION) {
-            compileGroupFile(inputPath, tempWriter, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
+            compileGroupFile(inputPath, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
         } else if (ext === stGroup.TEMPLATE_FILE_EXTENSION) {
-            compileGroupFile(inputPath, tempWriter, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
+            compileGroupFile(inputPath, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
         }
     }
 }
