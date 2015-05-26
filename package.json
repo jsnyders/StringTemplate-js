@@ -3,17 +3,28 @@
     "version": "0.1.0",
     "description": "StringTemplate v4 for JavaScript",
     "keywords": ["Template, StringTemplate"],
-    "main": "main",
+    "main": "lib/stRuntime.js",
     "repository": {
         "type": "git",
         "url": "https://github.com/jsnyders/StringTemplate-js"
     },
+    "bin": {
+        "stc": "bin/stc"
+    },
     "scripts": {
+        "test": "grunt mochaTest"
     },
     "author": "John Snyders",
     "license": "BSD",
+    "readmeFilename": "README.md",
+    "engines": {
+        "node": ">=0.12.4"
+    },
     "dependencies": {
         "yargs": "~3.6"
+    },
+    "optionalDependencies": {
+        "uglify-js": "~2.3"
     },
     "devDependencies": {
         "grunt": "~0.4.5",

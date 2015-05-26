@@ -27,9 +27,8 @@
  */
 /*
  * stc.js - StringTemplate Compiler
- * Commandline program that takes a group of StringTemplate source files
- * and writes a JavaScript module that implements the template at runtime.
- * Also exports callable functions to do the same from another program.
+ * Functions that take one or more StringTemplate source files
+ * and write a JavaScript module that implements the template at runtime.
  */
 "use strict";
 
@@ -109,8 +108,7 @@ function getFileReader(baseDir, encoding) {
         var text;
 
         // files, if not absolute, are relative to the given base dir
-        // todo need newer version of node for this: path.isAbsolute(baseDir)
-        if (file.substring(0,1) !== "/") {
+        if (!path.isAbsolute(file)) {
             file = path.join(baseDir, file);
         }
         try {
@@ -135,14 +133,14 @@ function parseFile(file, baseDir, options) {
     generate(group, baseDir);
 }
 
+// xxx take options. Consider taking verbose, ast, output filename, minify, 
 function compileGroupFile(file, encoding, delimiterStartChar, delimiterStopChar) {
     var baseDir = path.dirname(file),
         ext = path.extname(file);
 
     encoding = encoding || "utf8";
 
-    // todo need newer version of node for this: path.isAbsolute(baseDir)
-    if (baseDir.substring(0,1) !== "/") {
+    if (!path.isAbsolute(baseDir)) {
         baseDir = path.join(process.cwd(), baseDir);
         file = path.join(process.cwd(), file);
     }
@@ -296,90 +294,8 @@ function generate(groupAST, baseDir) {
 
 }
 
-function main() {
-
-    //
-    // Command line parsing
-    //
-    var argv = require('yargs')
-        .require(1, "Missing required input-path argument")
-        .option("encoding", {
-            alias: "e",
-            default: "utf8",
-            type: "string",
-            describe: "File encoding."
-        })
-        .option("delimiters", {
-            alias: "s",
-            default: "$$",
-            type: "string",
-            describe: "Start and stop characters that delimit template expressions."
-        })
-        .option("raw", {
-            alias: "r",
-            default: false,
-            type: "boolean",
-            describe: "Template files with no declarations (raw)."
-        })
-        .option("v", {
-            alias: "verbose",
-            default: false,
-            type: "boolean",
-            describe: "Log output about what the compiler is doing"
-        })
-        .usage("Usage: $0 [options] input-path")
-        .wrap(78)
-        .version(VERSION, "version")
-        .strict()
-        .help("help", "Display usage")
-        .alias("help", "h")
-        .check(function(args) {
-            if (args.delimiters.length !== 2) {
-                throw "Error: delimiters option must be exactly two characters.";
-            }
-            return true;
-        })
-        .argv;
-
-    // xxx output file options -o file.js default stdout
-    // option to output ast (what is dumped currently) use output file with .json extension
-
-    var ext, stat,
-        inputPath = argv._[0];
-
-    setVerbose(argv.verbose);
-    setOutputAST(true); // todo take this from an option
-
-    if (argv.verbose) {
-        console.log("StringTemplate compiler version " + VERSION);
-    }
-
-    try {
-        stat = fs.statSync(inputPath);
-    } catch (ex) {
-        fatalIOError(ex, inputPath);
-    }
-
-    if (stat.isDirectory()) {
-        if (argv.raw) {
-            compileRawGroupDir(inputPath, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
-        } else {
-            compileGroupDir(inputPath, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
-        }
-    } else {
-        if (argv.raw) {
-            console.log("Warning: raw option ignored when compiling a single file."); // xxx why would that be?
-        }
-        ext = path.extname(inputPath);
-        if (ext === stGroup.GROUP_FILE_EXTENSION) {
-            compileGroupFile(inputPath, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
-        } else if (ext === stGroup.TEMPLATE_FILE_EXTENSION) {
-            compileGroupFile(inputPath, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
-        }
-    }
-}
-
 module.exports = {
+    version: VERSION,
     compileGroupFile: compileGroupFile,
     compileGroupDir: compileGroupDir,
     compileRawGroupDir: compileRawGroupDir,
@@ -388,7 +304,3 @@ module.exports = {
     setOutputAST: setOutputAST,
     getOutputAST: getOutputAST
 };
-
-if (require.main === module) {
-    main();
-}
