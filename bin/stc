@@ -10,6 +10,7 @@ var fs = require("fs"),
 //
 // Command line parsing
 //
+// Keep these defaults in sync with default options in stc.js
 var argv = require('yargs')
     .require(1, "Missing required input-path argument")
     .option("ast", {
@@ -26,13 +27,14 @@ var argv = require('yargs')
     })
     .option("delimiters", {
         alias: "s",
-        default: "$$",
+        default: stGroup.DEFAULT_START_DELIMITER + stGroup.DEFAULT_STOP_DELIMITER,
         type: "string",
         describe: "Start and stop characters that delimit template expressions."
     })
     .option("output", {
         alias: "o",
         type: "string",
+        default: "",
         describe: "Output file name."
     })
     .option("minify", {
@@ -69,11 +71,8 @@ var argv = require('yargs')
 
 // xxx option to also compile imports? or take list of inputs?
 
-var ext, stat,
+var ext, stat, options, startTime,
     inputPath = argv._[0];
-
-stc.setVerbose(argv.verbose);
-stc.setOutputAST(argv.ast);
 
 if (argv.verbose) {
     console.log("StringTemplate compiler version " + stc.version);
@@ -94,20 +93,41 @@ try {
 
 // xxx pass in options object and callback or get a promise back?
 // xxx output time perhaps
+options = {
+    encoding: argv.encoding,
+    verbose: argv.verbose,
+    outputAST: argv.ast,
+    minify: argv.minify,
+    delimiterStartChar: argv.delimiters.charAt(0),
+    delimiterStopChar: argv.delimiters.charAt(1)
+};
+
+function callback(err) {
+    if (err) {
+        console.log(err.message);
+        process.exit(1);
+    }
+    console.log("Completed in " + (Math.round((Date.now() - startTime) / 10) / 100) + " seconds.");
+    process.exit(0);
+}
+
+startTime = Date.now();
+
 if (stat.isDirectory()) {
     if (argv.raw) {
-        stc.compileRawGroupDir(inputPath, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
+        stc.compileRawGroupDir(inputPath, options, callback);
     } else {
-        stc.compileGroupDir(inputPath, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
+        stc.compileGroupDir(inputPath, options, callback);
     }
 } else {
     if (argv.raw) {
-        stc.console.log("Warning: raw option ignored when compiling a single file."); // xxx why would that be?
+        console.log("Warning: raw option ignored when compiling a single file."); // xxx why would that be?
     }
     ext = path.extname(inputPath);
     if (ext === stGroup.GROUP_FILE_EXTENSION) {
-        stc.compileGroupFile(inputPath, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
+        stc.compileGroupFile(inputPath, options, callback);
     } else if (ext === stGroup.TEMPLATE_FILE_EXTENSION) {
-        stc.compileGroupFile(inputPath, argv.encoding, argv.delimiters.charAt(0), argv.delimiters.charAt(1));
+        // xxx 
+        stc.compileGroupFile(inputPath, options, callback);
     }
 }

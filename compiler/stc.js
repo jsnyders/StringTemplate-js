@@ -36,59 +36,27 @@ var fs = require("fs"),
     path = require("path"),
     parser = require("./stGrammar.js"),
     makeGroup = require("./group.js").makeGroup,
-    stGroup = require("../lib/stGroup.js");
+    stGroup = require("../lib/stGroup.js"),
+    util = require("../lib/util.js");
 
 var VERSION = "0.1.0";
 
-var gVerbose = false,
-    gOutputAST = false;
+var defaultOptions = {
+    verbose: false,
+    encoding: "utf8",
+    outputAST: false,
+    minify: false,
+    delimiterStartChar: stGroup.DEFAULT_START_DELIMITER,
+    delimiterStopChar: stGroup.DEFAULT_STOP_DELIMITER
+};
 
-/**
- * xxx
- * @param v
- */
-function setVerbose(v) {
-    gVerbose = v;
-}
-
-/**
- * xxx
- * @returns {boolean}
- */
-function getVerbose() {
-    return gVerbose;
-}
-
-/**
- * xxx
- * @param o
- */
-function setOutputAST(o) {
-    gOutputAST = o;
-}
-
-/**
- * xxx
- * @returns {boolean}
- */
-function getOutputAST() {
-    return gOutputAST;
-}
-
-function fatalIOError(ex, file) {
-    if (ex.code === "ENOENT") {
+function logError(file, ex) {
+    if (ex.name === "SyntaxError") {
+        console.log("Error: " + file + "(" + ex.line + "," + ex.column + "): " + ex.message);
+    } else if (ex.code === "ENOENT") {
         console.log("Error: No such file or directory '" + file + "'.");
     } else if (ex.code === "EACCES") {
         console.log("Error: Permission denied to access '" + file + "'.");
-    } else {
-        console.log(ex.message);
-    }
-    process.exit(1);
-}
-
-function logParserError(file, ex) {
-    if (ex.name === "SyntaxError") {
-        console.log("Error: " + file + "(" + ex.line + "," + ex.column + "): " + ex.message);
     } else {
         console.log(" Error: " + file + ": " + ex);
     }
@@ -105,53 +73,51 @@ function startRule(ext, raw) {
 
 function getFileReader(baseDir, encoding) {
     return function(file) {
-        var text;
-
         // files, if not absolute, are relative to the given base dir
         if (!path.isAbsolute(file)) {
             file = path.join(baseDir, file);
         }
-        try {
-            text = fs.readFileSync(file, {encoding: encoding});
-        } catch (ex) {
-            fatalIOError(ex, file);
-        }
-        return text;
+        return fs.readFileSync(file, {encoding: encoding});
     };
 }
 
-function parseFile(file, baseDir, options) {
-    var group = options.group,
-        text = options.readFile(file);
-
-    try {
-        parser.parse(text, options);
-    } catch (ex) {
-        logParserError(file, ex);
-        return;
-    }
-    generate(group, baseDir);
-}
-
-// xxx take options. Consider taking verbose, ast, output filename, minify, 
-function compileGroupFile(file, encoding, delimiterStartChar, delimiterStopChar) {
-    var baseDir = path.dirname(file),
+/**
+ * Compile a single group file. 
+ * 
+ * @param file {string} group file to compile
+ * @param options object to control compilation with these optional properties;
+ *   delimiterStartChar: {string} single character string. Default is stGroup.DEFAULT_START_DELIMITER.
+ *   delimiterStopChar: {string} single character string. Default is stGroup.DEFAULT_STOP_DELIMITER.
+ *   encoding: {string} encoding for input and output files. Default is "utf8".
+ *   verbose: {boolean} if true write additional information to stdout. Default is false.
+ *   outputAST: {boolean} if true output the AST that results from parsing the group file
+ *   minify: {boolean} if true minify the compiled JavaScript, Default is false.
+ *   outputFile: {string} xxx
+ * @param callback function to call when complete. function(err) if err is null then compilation is successful
+ * Reason for failure written to stdout.
+ */
+function compileGroupFile(file, options, callback) {
+    var parseOptions, text,
+        baseDir = path.dirname(file),
         ext = path.extname(file);
-
-    encoding = encoding || "utf8";
 
     if (!path.isAbsolute(baseDir)) {
         baseDir = path.join(process.cwd(), baseDir);
         file = path.join(process.cwd(), file);
     }
-    parseFile(file, baseDir, {
-        startRule: startRule(ext, false),
-        readFile: getFileReader(baseDir, encoding), // xxx perhaps reader goes in group?
-        group: makeGroup("", path.basename(file, ext)),
-        verbose: gVerbose,
-        delimiterStartChar: delimiterStartChar,
-        delimiterStopChar: delimiterStopChar
-    });
+    parseOptions = util.copyProperties(options, defaultOptions);
+    parseOptions.startRule = startRule(ext, false);
+    parseOptions.readFile = getFileReader(baseDir, parseOptions.encoding);
+    parseOptions.group = makeGroup("", path.basename(file, ext));
+
+    try {
+        text = parseOptions.readFile(file);
+        parser.parse(text, parseOptions);
+    } catch (ex) {
+        logError(file, ex);
+        callback(Error("Failed to compile '" + file + "'"));
+    }
+    generate(baseDir, parseOptions, callback);
 }
 
 function parseDir(rootDir, options) {
@@ -171,87 +137,100 @@ function parseDir(rootDir, options) {
             try {
                 stat = fs.statSync(filePath);
             } catch (ex) {
-                fatalIOError(ex, filePath);
+                logError(filePath, ex);
+                errorCount += 1;
+                continue;
             }
             if (stat.isDirectory()) {
-                if (gVerbose) {
+                if (options.verbose) {
                     console.log("Processing group sub folder '" + relFile + "'...");
                 }
                 processDir(relFile, filePath);
             } else if (ext === stGroup.TEMPLATE_FILE_EXTENSION || ext === stGroup.GROUP_FILE_EXTENSION) {
-                if (gVerbose) {
+                if (options.verbose) {
                     console.log("Processing file '" + relFile + "'...");
                 }
 
-                text = options.readFile(relFile);
-                group.groupFolder = relDir;
-                group.fileName = path.basename(file, ext);
-                options.startRule = startRule(ext, group.raw);
                 try {
+                    text = options.readFile(relFile);
+                    group.groupFolder = relDir;
+                    group.fileName = path.basename(file, ext);
+                    options.startRule = startRule(ext, group.raw);
                     parser.parse(text, options);
                 } catch (ex) {
-                    logParserError(relFile, ex);
+                    logError(relFile, ex);
                     errorCount += 1;
                 }
-                // xxx when, where to process imports
             }
         }
     }
 
-    if (gVerbose) {
+    if (options.verbose) {
         console.log("Processing group folder '" + rootDir + "'...");
     }
     group = options.group;
     processDir("", rootDir);
-    if (errorCount === 0) {
-        generate(group, "xxx base dir");
+    return errorCount;
+}
+
+function compileDir(dir, options, callback, raw) {
+    var parseOptions,
+        baseDir = path.dirname(dir);
+
+    if (!path.isAbsolute(baseDir)) {
+        baseDir = path.join(process.cwd(), baseDir);
+        dir = path.join(process.cwd(), dir);
+    }
+
+    parseOptions = util.copyProperties(options, defaultOptions);
+    // start rule needs to be set per file
+    parseOptions.readFile = getFileReader(dir, parseOptions.encoding);
+    parseOptions.group = makeGroup("", "", raw);
+
+    if (parseDir(dir, parseOptions) === 0) {
+        generate(baseDir, parseOptions, callback);
+    } else {
+        callback(Error("Failed to compile '" + dir + "'"));
     }
 }
 
+
 /**
- * xxx
- * @param dir
- * @param encoding
- * @param delimiterStartChar
- * @param delimiterStopChar
+ * Compile a group directory.
+ *
+ * @param dir {string} directory full of template or group files to compile to a single group
+ * @param options object to control compilation with these optional properties;
+ *   delimiterStartChar: {string} single character string. Default is stGroup.DEFAULT_START_DELIMITER.
+ *   delimiterStopChar: {string} single character string. Default is stGroup.DEFAULT_STOP_DELIMITER.
+ *   encoding: {string} encoding for input and output files. Default is "utf8".
+ *   verbose: {boolean} if true write additional information to stdout. Default is false.
+ *   outputAST: {boolean} if true output the AST that results from parsing the group file
+ *   minify: {boolean} if true minify the compiled JavaScript, Default is false.
+ *   outputFile: {string} xxx
+ * @param callback function to call when complete. function(err) if err is null then compilation is successful
+ * Reason for failure written to stdout.
  */
-function compileGroupDir(dir, encoding, delimiterStartChar, delimiterStopChar) {
-    var group, parseOptions;
-
-    encoding = encoding || "utf8";
-
-    group = makeGroup("", "", false);
-    parseOptions = {
-        readFile: getFileReader(dir, encoding), // xxx perhaps reader goes in group?
-        group: group,
-        verbose: gVerbose,
-        delimiterStartChar: delimiterStartChar,
-        delimiterStopChar: delimiterStopChar
-    };
-    parseDir(dir, parseOptions);
+function compileGroupDir(dir, options, callback) {
+    compileDir(dir, options, callback, false);
 }
 
 /**
- * xxx
- * @param dir
- * @param encoding
- * @param delimiterStartChar
- * @param delimiterStopChar
+ * Compile a group directory of raw template files.
+ *
+ * @param dir {string} directory full of template or group files to compile to a single group
+ * @param options object to control compilation with these optional properties;
+ *   delimiterStartChar: {string} single character string. Default is stGroup.DEFAULT_START_DELIMITER.
+ *   delimiterStopChar: {string} single character string. Default is stGroup.DEFAULT_STOP_DELIMITER.
+ *   encoding: {string} encoding for input and output files. Default is "utf8".
+ *   verbose: {boolean} if true write additional information to stdout. Default is false.
+ *   outputAST: {boolean} if true output the AST that results from parsing the group file
+ *   minify: {boolean} if true minify the compiled JavaScript, Default is false.
+ *   outputFile: {string} xxx
+ * @param callback function to call when complete. function(err) if err is null then compilation is successful
+ * Reason for failure written to stdout.
  */
-function compileRawGroupDir(dir, encoding, delimiterStartChar, delimiterStopChar) {
-    var group, parseOptions;
-
-    encoding = encoding || "utf8";
-
-    group = makeGroup("", "", true);
-    parseOptions = {
-        readFile: getFileReader(dir, encoding), // xxx perhaps reader goes in group?
-        group: group,
-        verbose: gVerbose,
-        delimiterStartChar: delimiterStartChar,
-        delimiterStopChar: delimiterStopChar
-    };
-    parseDir(dir, parseOptions);
+function compileRawGroupDir(dir, options, callback) {
+    compileDir(dir, options, callback, true);
 }
 
 // xxx
@@ -261,15 +240,16 @@ function writeFile(filePath, text) {
     });
 }
 
-function generate(groupAST, baseDir) {
-    var astFilename, filename;
+function generate(baseDir, options, callback) {
+    var astFilename, filename,
+        groupAST = options.group;
 
     // xxx any pre processing of parsing output needed?
     groupAST.date = (new Date()).toString();
     groupAST = {g:groupAST};
 
-    if (gOutputAST) {
-        astFilename = path.join(baseDir, groupAST.g.fileName + ".stg.ast");
+    if (options.outputAST) {
+        astFilename = path.join(baseDir, groupAST.g.fileName + "_stg_ast.json");
         writeFile(astFilename, JSON.stringify(groupAST, null, 4));
     }
 
@@ -289,7 +269,7 @@ function generate(groupAST, baseDir) {
     stst.stdin.end();
 
     stst.on("close", function() {
-        console.log("xxx done");
+        callback(null);
     });
 
 }
@@ -298,9 +278,5 @@ module.exports = {
     version: VERSION,
     compileGroupFile: compileGroupFile,
     compileGroupDir: compileGroupDir,
-    compileRawGroupDir: compileRawGroupDir,
-    setVerbose: setVerbose,
-    getVerbose: getVerbose,
-    setOutputAST: setOutputAST,
-    getOutputAST: getOutputAST
+    compileRawGroupDir: compileRawGroupDir
 };
