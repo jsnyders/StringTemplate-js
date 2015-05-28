@@ -164,10 +164,18 @@ s.$a.name$
 %>
 
 // st.prop(st.prop(a, "foo"), "xxx")
-// xxx for now assume just one property reference
+// xxx for now assume just one property reference 
 exprMEMBER_EXPR(a) ::= <%
-st.prop(g, $({expr$a.object.type$})(a.object)$, "$first(a.properties).property;format="string"$")
+st.prop(g, $({expr$a.object.type$})(a.object)$, $property(first(a.properties))$)
 %>
+
+property(p) ::= <%
+$({property$p.type$})(p.property)$
+%>
+
+propertyPROP(p) ::= <%"$p;format="string"$"%>
+
+propertyPROP_IND(p) ::= <%$({expr$p.type$})(p)$%>
 
 /* returns a template with arguments added */
 exprINCLUDE(a) ::= <<

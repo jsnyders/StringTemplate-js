@@ -60,3 +60,4 @@ OS new line. A lone cr may be unlikely. One way to get one is with $"\r"$.
 * The Java implementation allows any start or stop delimiter even if they will later cause confusion. 
 This implementation restricts the delimiters to "#$%^&*<>"
 
+* The JavaScript implementation doesn't support the v3 old style group file header

@@ -96,7 +96,7 @@ $dict1.template$ is value of big is: big string\nand it is a » template
 $dict1.key$ is key
 no such key: /$dict1.nosuch$/ /$dict1.nosuch;null="empty"$/
 $dict2.str$ is B
-$dict2.("default")$ is X not value of key default $! can't access a dict entry with key default !$
+$!xxx $dict2.("default")$ is X not value of key default !$$! ref impl can't access a dict entry with key default !$
 $dict2.nosuch$ is X
 $dict3.("str")$ is C
 empty list /$dict3.emptyList$/
