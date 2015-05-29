@@ -46,8 +46,6 @@ describe("test group test", function() {
             // there are no arguments
 
             t.write(writer);
-            console.log("xxx ref testEscapes: " + refOutput);
-
             assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
             done();
         });
@@ -66,8 +64,6 @@ describe("test group test", function() {
             // there are no arguments
 
             t.write(writer);
-            console.log("xxx ref testLiterals: " + refOutput);
-
             assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
             done();
         });
@@ -84,53 +80,59 @@ describe("test group test", function() {
             assert.notStrictEqual(t, null, "found a template");
             t.add("a", "value of a");
 
-
             t.write(writer);
-            console.log("xxx ref testDictionaryAccess: " + refOutput);
-
             assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
             done();
         });
 
     });
 
-    /*xxx
-        it("xxx should generate the expected string for main when if condition is false", function() {
-            var t,
-                group = st.loadGroup(testTemplateGroup),
-                writer = w.makeWriter();
-    
-            t = group.getTemplate("/main");
-            assert.notStrictEqual(t, null, "found a template");
-            t.add("names",  [
-                {
-                    "first": "Max",
-                    "last": "Smith",
-                    "hasTitle": false
-                },
-                {
-                    "first": "Dan",
-                    "last": "Jones",
-                    "hasTitle": true,
-                    "title": "Dr."
-                }
-            ]);
-            t.add("conditions", {
-                "c1": true,
-                    "c2": 0,
-                    "c3": null,
-                    "c4": false,
-                    "c5": "value"
-            });
-    
-            try {
-                t.write(writer);
-            } catch(ex) {
-                console.log("xxx output up to error: " + writer.toString());
-                throw ex;
+    it("should generate same output as reference implementation for template simple", function(done) {
+        var t,
+            group = st.loadGroup(testTemplateGroup),
+            writer = w.makeWriter();
+
+        getSTReferenceOutput("testGroup", "simple", {
+            "arg1": {
+                "hasTitle": true,
+                "title": "Mr",
+                "first": "Sam",
+                "last": "Smith"
             }
-            
-            assert.strictEqual(writer.toString(), "Greeting [Max], [Smith]\nBody\n", "got expected rendered text");
+        }, function(refOutput) {
+            t = group.getTemplate("/simple");
+            assert.notStrictEqual(t, null, "found a template");
+            t.add("arg1", {
+                "hasTitle": true,
+                "title": "Mr",
+                "first": "Sam",
+                "last": "Smith"
+            });
+            console.log("xxx ref output: " + refOutput);
+            t.write(writer);
+            assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
+            done();
         });
-    xxx */
+
+        getSTReferenceOutput("testGroup", "simple", {
+            "arg1": {
+                "hasTitle": false,
+                "first": "Sam",
+                "last": "Smith"
+            }
+        }, function(refOutput) {
+            t = group.getTemplate("/simple");
+            assert.notStrictEqual(t, null, "found a template");
+            t.add("arg1", {
+                "hasTitle": false,
+                "first": "Sam",
+                "last": "Smith"
+            });
+            console.log("xxx ref output: " + refOutput);
+            t.write(writer);
+            assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
+            done();
+        });
+
+    });
 });
