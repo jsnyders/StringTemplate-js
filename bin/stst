@@ -1,0 +1,225 @@
+#!/usr/bin/env node
+
+"use strict";
+
+var fs = require("fs"),
+    path = require("path"),
+    stc = require("../compiler/stc.js"),
+    stGroup = require("../lib/stGroup.js"),
+    st = require("../lib/stRuntime"),
+    w = require("../lib/autoIndentWriter");
+
+function fileExists(file) {
+    var stat;
+    try {
+        stat = fs.statSync(file);
+    } catch (ex) {
+        return false;
+    }
+    return stat.isFile();
+}
+
+function processTemplate(group, template, options, data) {
+    var t, g, p, v, writer, compiledGroup;
+
+    compiledGroup = require(group);
+    g = st.loadGroup(compiledGroup);
+    writer = w.makeWriter();
+
+    t = g.getTemplate(template);
+    for (p in data) {
+        if (data.hasOwnProperty(p)) {
+            t.add(p, data[p]);
+        }
+    }
+
+    t.write(writer);
+
+    console.log("xxx\n" + writer.toString());
+
+}
+
+
+function compile(inputPath, xxx) {
+    var stat, ext;
+    try {
+        stat = fs.statSync(inputPath);
+    } catch (ex) {
+        if (ex.code === "ENOENT") {
+            console.log("Error: No such file or directory '" + inputPath + "'.");
+        } else if (ex.code === "EACCES") {
+            console.log("Error: Permission denied to access '" + inputPath + "'.");
+        } else {
+            console.log(ex.message);
+        }
+        process.exit(1);
+    }
+
+    // xxx pass in options object and callback or get a promise back?
+    // xxx output time perhaps
+    options = {
+        encoding: argv.encoding,
+        verbose: argv.verbose,
+        outputAST: argv.ast,
+        minify: argv.minify,
+        delimiterStartChar: argv.delimiters.charAt(0),
+        delimiterStopChar: argv.delimiters.charAt(1)
+    };
+
+    function callback(err) {
+        if (err) {
+            console.log(err.message);
+            process.exit(1);
+        }
+        console.log("Completed in " + (Math.round((Date.now() - startTime) / 10) / 100) + " seconds.");
+        process.exit(0);
+    }
+
+    startTime = Date.now();
+
+    if (stat.isDirectory()) {
+        if (argv.raw) {
+            stc.compileRawGroupDir(inputPath, options, callback);
+        } else {
+            stc.compileGroupDir(inputPath, options, callback);
+        }
+    } else {
+        if (argv.raw) {
+            console.log("Warning: raw option ignored when compiling a single file."); // xxx why would that be?
+        }
+        ext = path.extname(inputPath);
+        if (ext === stGroup.GROUP_FILE_EXTENSION) {
+            stc.compileGroupFile(inputPath, options, callback);
+        } else if (ext === stGroup.TEMPLATE_FILE_EXTENSION) {
+            // xxx 
+            stc.compileGroupFile(inputPath, options, callback);
+        }
+    }
+}
+
+
+//
+// Command line parsing
+//
+var argv = require('yargs')
+    .require(1, "Missing required [group.]template argument")
+    .option("encoding", {
+        alias: "e",
+        default: "utf8",
+        type: "string",
+        describe: "File encoding."
+    })
+    .option("templates", {
+        alias: "t",
+        type: "string",
+        default: "",
+        describe: "Template directory where .stg or .st files are found. Default is current working directory."
+    })
+    .option("output", {
+        alias: "o",
+        type: "string",
+        default: "",
+        describe: "Output file. Default is to use stdout"
+    })
+    .option("noindent", {
+        alias: "n",
+        default: false,
+        type: "boolean",
+        describe: "Don't auto indent the output"
+    })
+    .option("delimiters", {
+        alias: "s",
+        default: stGroup.DEFAULT_START_DELIMITER + stGroup.DEFAULT_STOP_DELIMITER,
+        type: "string",
+        describe: "Start and stop characters that delimit template expressions. Only needed if compiling."
+    })
+    .option("raw", {
+        alias: "r",
+        default: false,
+        type: "boolean",
+        describe: "Template files with no declarations (raw). Only needed if compiling."
+    })
+    .option("v", {
+        alias: "verbose",
+        default: false,
+        type: "boolean",
+        describe: "Log output about what the compiler is doing"
+    })
+    .usage("Usage: $0 [options] [<group>.]<template> <data-file>")
+    .wrap(78)
+    .version(stc.version, "version")
+    .strict()
+    .help("help", "Display usage")
+    .alias("help", "h")
+    .check(function(args) {
+        if (args.delimiters.length !== 2) {
+            throw "Error: delimiters option must be exactly two characters.";
+        }
+        return true;
+    })
+    .argv;
+
+if (argv.verbose) {
+    // xxx version stc vs stst vs runtime vs compiler All one version?
+    console.log("StringTemplate version " + stc.version);
+}
+
+var i, startTime, baseDir, groupFile, groupName, template, data, buf,
+    arg1 = argv._[0],
+    options = {
+        noIndent: argv.noindent,
+        output: argv.output,
+        verbose: argv.verbose
+        // xxx encoding?
+    };
+
+// figure out where to look for compiled groups
+baseDir = argv.templates;
+if (!path.isAbsolute(baseDir)) {
+    baseDir = path.join(process.cwd(), baseDir);
+}
+if (argv.verbose) {
+    console.log("Base Directory: " + baseDir);
+}
+
+// read data
+// xxx
+if (!argv._[1]) {
+    console.log("xxx need to read from stding");
+} else {
+    data = fs.readFileSync(argv._[1], {
+        encoding: argv.encoding
+    });
+}
+data = JSON.parse(data);
+
+i = arg1.lastIndexOf(".");
+if (i >= 0) {
+    template = arg1.substring(i + 1);
+    groupName = arg1.substring(0, i);
+} else {
+    template = arg1;
+    groupName = path.basename(baseDir);
+}
+console.log("xxx group " + groupName + ", template " + template);
+
+// look for compiled group file
+groupFile = path.join(baseDir, groupName + "_stg.js");
+if (fileExists(groupFile)) {
+    if (argv.verbose) {
+        console.log("Found compiled group file " + path.basename(groupFile));
+    }
+    processTemplate(groupFile, template, options, data);
+} else {
+    // look for group file
+    groupFile = path.join(baseDir, groupName + ".stg");
+    if (fileExists(groupFile)) {
+        if (argv.verbose) {
+            console.log("Found group file " + path.basename(groupFile));
+        }
+        console.log("xxx todo compile");
+    } else {
+        // try to compile baseDir as a group directory
+        console.log("xxx todo compile group directory");
+    }
+}
