@@ -729,8 +729,7 @@ primary
         }
 
 args
-    = argExprList?
-	/ first:namedArg rest:( __ "," __ a:namedArg { return a; } )* passThrough:( __ "," __ pt:'...' { return true; })? {
+    = first:namedArg rest:( __ "," __ a:namedArg { return a; } )* passThrough:( __ "," __ pt:'...' { return true; })? {
 	        var ret = {
                 type: "ARGS",
                 value: makeList(first, rest),
@@ -745,6 +744,7 @@ args
                 passThrough: true
             };
         }
+	/ argExprList
 
 argExprList
     = first:arg rest:( __ "," __ a:arg { return a; } )* {
@@ -764,7 +764,7 @@ arg
     = exprNoComma
 
 namedArg
-    = i:ID __ '=' __ v:arg {
+    = i:ID __ "=" __ v:arg {
             v.argName = i;
             return v;
         }

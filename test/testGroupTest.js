@@ -52,7 +52,6 @@ describe("test group test", function() {
 
     });
 
-
     it("should generate same output as reference implementation for template testLiterals", function(done) {
         var t,
             group = st.loadGroup(testTemplateGroup),
@@ -163,4 +162,26 @@ describe("test group test", function() {
         });
 
     });
+
+    it("should generate same output as reference implementation for template testArgsCaller with no args passed in", function(done) {
+        var t,
+            group = st.loadGroup(testTemplateGroup),
+            writer = w.makeWriter();
+
+        getSTReferenceOutput("testGroup", "testArgsCaller", {}, function(refOutput) {
+            t = group.getTemplate("/testArgsCaller");
+            assert.notStrictEqual(t, null, "found a template");
+            // there are no arguments
+
+            t.write(writer);
+            assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
+            // xxx need to verify runtime errors and results separately 
+            // xxx pass throught not yet hooked up
+            // xxx seems to be a difference with extra new line
+            done();
+        });
+
+    });
+
+
 });

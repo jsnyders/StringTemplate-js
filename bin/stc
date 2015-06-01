@@ -4,8 +4,8 @@
 
 var fs = require("fs"),
     path = require("path"),
-    stc = require("../compiler/stc.js"),
-    stGroup = require("../lib/stGroup.js");
+    stc = require("../compiler/stc"),
+    stGroup = require("../lib/stGroup");
 
 //
 // Command line parsing

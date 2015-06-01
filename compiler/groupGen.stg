@@ -99,7 +99,10 @@ group.addTemplate("$name;format="string"$", r);
 >>
 
 formalArgs(arg) ::= <%
-    { name: "$arg.name;format="string"$" }
+    { name: "$arg.name;format="string"$"$\\$
+    $if(arg.defaultValue)$$\\$
+    , default: $({expr$arg.defaultValue.type$})(arg.defaultValue)$$\\$
+    $endif$ }
 %>
 
 templateElement(e) ::= <<
@@ -182,17 +185,20 @@ exprINCLUDE(a) ::= <<
 (function() {
     var t = g.getTemplate("$a.templateName;format="string"$", s);
     $a.args:{a|$includeArgs(a, i0)$};separator="\n"$
+    $if(a.argsPassThrough)$
+    // xxx handle pass through
+    $endif$
     return t;
 })()
 >>
 
-includeArgs(a, i) ::= <<
-$if(a.argName)$$\\$
-t.add("$a.argName;format="string"$", $({expr$a.type$})(a)$);
-$else$$\\$
+includeArgs(a, i) ::= <%
+$if(a.argName)$
+t.add("$a.argName.value;format="string"$", $({expr$a.type$})(a)$);
+$else$
 t.add($i$, $({expr$a.type$})(a)$);
 $endif$
->>
+%>
 
 /* returns an array of templates where each one is an element of the input expression applied to the template */
 exprMAP(a) ::= <<
