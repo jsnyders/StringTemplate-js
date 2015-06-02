@@ -77,7 +77,7 @@ describe("test group test", function() {
         getSTReferenceOutput("testGroup", "testDictionaryAccess", {"a": "value of a"}, function(refOutput) {
             t = group.getTemplate("/testDictionaryAccess");
             assert.notStrictEqual(t, null, "found a template");
-            t.add("a", "value of a");
+            t.setArgs({"a": "value of a"});
 
             t.write(writer);
             assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
@@ -93,7 +93,7 @@ describe("test group test", function() {
         getSTReferenceOutput("testGroup", "testDictionaryAccessAlt", {"a": "one"}, function(refOutput) {
             t = group.getTemplate("/testDictionaryAccessAlt");
             assert.notStrictEqual(t, null, "found a template");
-            t.add("a", "one");
+            t.setArgs({"a": "one"});
 
             t.write(writer);
             assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
@@ -102,7 +102,7 @@ describe("test group test", function() {
             getSTReferenceOutput("testGroup", "testDictionaryAccessAlt", {"a": "two"}, function(refOutput) {
                 t = group.getTemplate("/testDictionaryAccessAlt");
                 assert.notStrictEqual(t, null, "found a template");
-                t.add("a", "two");
+                t.setArgs({"a": "two"});
 
                 t.write(writer);
                 assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
@@ -127,12 +127,12 @@ describe("test group test", function() {
         }, function(refOutput) {
             t = group.getTemplate("/simple");
             assert.notStrictEqual(t, null, "found a template");
-            t.add("arg1", {
+            t.setArgs({"arg1": {
                 "hasTitle": true,
                 "title": "Mr",
                 "first": "Sam",
                 "last": "Smith"
-            });
+            }});
             console.log("xxx ref output: " + refOutput);
             t.write(writer);
             assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
@@ -147,11 +147,11 @@ describe("test group test", function() {
             }, function(refOutput) {
                 t = group.getTemplate("/simple");
                 assert.notStrictEqual(t, null, "found a template");
-                t.add("arg1", {
+                t.setArgs({"arg1": {
                     "hasTitle": false,
                     "first": "Sam",
                     "last": "Smith"
-                });
+                }});
                 console.log("xxx ref output: " + refOutput);
                 t.write(writer);
                 console.log("xxx writer output: " + writer.toString());
