@@ -93,7 +93,11 @@ r = function(w, rc) {
     $strip(t.template):templateElement()$
 };
 r.args = [
+    $if(g.raw)$$\\$
+    {name:"it"}
+    $else$$\\$
     $t.args:formalArgs();separator=",\n"$
+    $endif$$\\$
 ];
 group.addTemplate("$name;format="string"$", r);
 >>
@@ -184,19 +188,20 @@ propertyPROP_IND(p) ::= <%$({expr$p.type$})(p)$%>
 exprINCLUDE(a) ::= <<
 (function() {
     var t = g.getTemplate("$a.templateName;format="string"$", s);
-    $a.args:{a|$includeArgs(a, i0)$};separator="\n"$
-    $if(a.argsPassThrough)$
-    // xxx handle pass through
-    $endif$
+    t.setArgs($\\$
+    $if(a.argsNamed)${ $else$[ $endif$$\\$
+    $a.args:includeArgs();separator=",\n"$
+    $if(a.argsNamed)$ }$else$ ]$endif$$\\$
+    $if(a.argsPassThrough)$, true$endif$);
     return t;
 })()
 >>
 
-includeArgs(a, i) ::= <%
+includeArgs(a) ::= <%
 $if(a.argName)$
-t.add("$a.argName.value;format="string"$", $({expr$a.type$})(a)$);
+"$a.argName;format="string"$": $({expr$a.type$})(a)$
 $else$
-t.add($i$, $({expr$a.type$})(a)$);
+$({expr$a.type$})(a)$
 $endif$
 %>
 

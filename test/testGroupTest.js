@@ -12,6 +12,7 @@ var spawn = require('child_process').spawn;
 
 function getSTReferenceOutput(group, template, data, callback) {
     var output = "";
+    var errOutput = "";
     var stst = spawn("stst", [group + "." + template], {
         cwd: path.dirname(module.filename),
         stdio: ["pipe", "pipe", "pipe"]
@@ -25,11 +26,11 @@ function getSTReferenceOutput(group, template, data, callback) {
     });
 
     stst.stderr.on("data", function(data) {
-        output += data;
+        errOutput += data;
     });
 
     stst.on("close", function() {
-        callback(output);
+        callback(output, errOutput);
     });
 }
 
@@ -168,12 +169,15 @@ describe("test group test", function() {
             group = st.loadGroup(testTemplateGroup),
             writer = w.makeWriter();
 
-        getSTReferenceOutput("testGroup", "testArgsCaller", {}, function(refOutput) {
+        getSTReferenceOutput("testGroup", "testArgsCaller", {}, function(refOutput, errors) {
             t = group.getTemplate("/testArgsCaller");
             assert.notStrictEqual(t, null, "found a template");
             // there are no arguments
 
+            console.log("xxx errors: " + errors);
+            console.log("xxx ref: " + refOutput);
             t.write(writer);
+            console.log("xxx js: " + writer.toString());
             assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
             // xxx need to verify runtime errors and results separately 
             // xxx pass throught not yet hooked up

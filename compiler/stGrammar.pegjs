@@ -680,7 +680,8 @@ includeExpr
                  type: "INCLUDE",
                  templateName: i.value,
                  args: a.value,
-                 argsPassThrough: a.passThrough
+                 argsNamed: !!a.named,
+                 argsPassThrough: !!a.passThrough
              };
          }
 // xxx todo region stuff
@@ -733,6 +734,7 @@ args
 	        var ret = {
                 type: "ARGS",
                 value: makeList(first, rest),
+                named: true,
                 passThrough: !!passThrough
 	        };
 	        return ret;
@@ -765,7 +767,7 @@ arg
 
 namedArg
     = i:ID __ "=" __ v:arg {
-            v.argName = i;
+            v.argName = i.value;
             return v;
         }
 
