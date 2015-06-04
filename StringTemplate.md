@@ -91,9 +91,6 @@ To get this output | Enter this in the template
 
 The last two only apply in a sub template.
 
-xxx leave >> and %> escapes to later or include now?
-
-
 ## The Data Model
 StringTemplate has very few data types. Most of how it deals with the data model is implementation specific. What it 
 does know about is the shape of the data. Data can be one of the following shapes:
@@ -128,6 +125,8 @@ each implementation must specify how it maps the StringTemplate data model onto 
 The processor API provides a way to associate application data with templates. In addition data values can be passed from
 one template to another via argument passing as described below. Template expressions can also contain a few literal
 data represenetations as described next. See also dictionaries in Group Files section.
+
+xxx attribute names, scopes here or later
 
 ## Literals
 Template expressions may include the following literals:
@@ -228,14 +227,16 @@ use of arrays.
 
 ### Property Reference
 If the attribute value is an object then you can access the values of its properties with this property reference
-syntax:
+syntax: `_attribute_._property_`
+
+For example:
 
 ```
 Mr $hobbit.firstName$ $hobbit.lastName$,
 ```
 
 If the value of the `hobbit` attribute is an object with properties firstName and lastName and those properties have
-values "Bilbo" and "Baggins" respectivly then the above template results in:
+values "Bilbo" and "Baggins" respectively then the above template results in:
 
 ```
 Mr Bilbo Baggins,
@@ -249,9 +250,9 @@ For example if the hobbit object had a property called `name` and its value was 
 
 ```
 {
-    name: {
-        first: "Bilbo",
-        last: "Baggins"
+    "name": {
+        "first": "Bilbo",
+        "last": "Baggins"
     }
 }
 ```
@@ -267,6 +268,45 @@ xxx property indirect
 
 
 ### Include
+Often the output text requires repeated patterns of similar text. For example the footer at the bottom of each page
+in a book. To accomplish this StringTemplate allows you to break up your overall template system into any number of
+modular templates and include the output of one template in another. Templates are given names so they can be referenced
+in expressions. Templates can also define names for data values they expect to be given. These names are called 
+formal arguments or simply arguments or parameters. The syntax for defining templates with their name and arguments
+is given later in the Template Definition Files and Group Files sections. This section is about how to include templates
+from other templates. The syntax looks very much like a function call in various programming languages. And similar
+terminology is sometimes used. Rather than saying template A includes template B you could say template A calls or 
+invokes template B.
+
+Here is an over simplified example using HTML. Suppose your HTLM page is going to have a few buttons and you don't
+want to repeat the button markup each time. Make a template called button that takes parameters id and label.
+
+```
+<button id=$id$>$label$</button>
+```
+
+Then from the page template you can include as many buttons as you need.
+
+```
+...
+<input ...>
+...
+<div>
+$button("okBtn", "OK")$ $button("cancelBtn", "Cancel")$
+</div>
+...
+```
+
+In this simple example the values passed to the button template are string literals. In a more realistic example
+the argument values would be attribute or property reference expressions. For example:
+
+```
+$button(button1.id, button1.label)$
+```
+
+
+#### Argument Passing
+
 xxx todo
 
 ### Map
@@ -315,6 +355,8 @@ todo explain evaluation of conditions
 ## Template Definition Files
 
 todo
+
+xxx  >> and %> escapes
 
 ## Raw Template Files
 
