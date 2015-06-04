@@ -1,7 +1,7 @@
 # StringTemplate Documentation
 
-StringTemplate is a language for describing how to combine literal text with structured data. It is also a 
-library that processes that language.
+StringTemplate is a language for describing how to combine structured data with literal text to produce output text.
+It is also a library that processes that language.
 
 A template system is a template processor or engine that processes the template language along with any application
 specific code needed to acquire, access or generate the data and possibly store or transmit the resulting text.
@@ -11,23 +11,18 @@ The purpose of a template system is to produce output text where the output is g
 The templates are made up of literal text that is copied to the output as is and embedded expressions that specify what 
 data is to be inserted into the output.
 
-xxx todo
-template inputs
-data 
-compile/interpret runtime
-
 ## Templates
 Templates are literal text with embedded template expressions. Expressions are delimited with a special start and stop
 character. All text outside of these characters is copied to the output nearly verbatim (see Escaping Expression 
 Delimiters below). Text inside the delimiters are template expressions that determine how data is to be inserted into
-the output. 
+the output. The insertion happens at the point where the expression occurs within the literal text.
 
-StringTemplate templates enforce a separation between the template and the model (this is also known as model view 
-separation). Templates cannot implement any business logic*. The template cannot modify the data model. 
-Processing the template produces no side effects. Templates do have a constructs for conditionals, looping,
-a small number of built-in functions, a few options to control the output rendering, and calling templates with
-arguments. These features are necessary for the efficient generation of output text. 
-They are not sufficient to implement business logic.
+StringTemplate templates enforce a separation between the template and the data (this is also known as model view 
+separation where the data is referred to the model and the template is the view). Templates cannot implement
+any business logic*. The template cannot modify the data model.  Processing the template produces no side effects. 
+Templates do have a constructs for conditionals, looping, a small number of built-in functions, 
+a few options to control the output rendering, and calling templates with arguments. These features are necessary 
+for the efficient generation of output text. They are not sufficient to implement business logic.
 
 These claims of strict separation apply to the StringTemplate language. It is possible to abuse the API such that
 side effects or data modifications are possible. These are faults of the application implementation and not
@@ -111,10 +106,11 @@ does know about is the shape of the data. Data can be one of the following shape
  * array - also known as a list or linear collection/enumeration. The items in the array can be of any shape or type.
  The values are ordered. StringTemplate will aways implicitly iterate over the array items.
 
- * object - also known as a map, dictionary, hash, record or structure.  This is an unordered collection of named values.
+ * object - also known as a map, dictionary, or hash. This is an unordered collection of named values.
+ The named values are known as properties of the object.
  The values can be of any shape or type. StringTemplate allows accessing the values by their name. This is known as 
  a property reference, access, or lookup. Depending on the context StringTemplate can also iterate over the 
- properties of an object.
+ property names of an object.
 
 The data types that StringTemplate deals with explicitly are:
 
@@ -122,13 +118,16 @@ The data types that StringTemplate deals with explicitly are:
  * Strings
  * Lists (arrays)
  * Booleans
- * Dictionaries
+ * Dictionaries (similar to objects but with a special feature for handling defaults)
 
 It is also aware of, but has no representation for, the special value null.
 
-xxx todo how each is handled
+The StringTemplate processor and its API is implemented in a specific programming language such as Java, C# or JavaScript and
+each implementation must specify how it maps the StringTemplate data model onto the native data structures of that language.
 
-xxx how data is supplied to the processor: dict, template arguments, literals
+The processor API provides a way to associate application data with templates. In addition data values can be passed from
+one template to another via argument passing as described below. Template expressions can also contain a few literal
+data represenetations as described next. See also dictionaries in Group Files section.
 
 ## Literals
 Template expressions may include the following literals:
@@ -169,7 +168,7 @@ The following expressions are used to insert special characters in the output:
 
  * `$\ $` insert a single space
  * `$\n$` insert a new line. This will be converted to the appropriate line ending character or character sequence
- by the implementation according to the Operating System conventions.
+by the implementation according to the Operating System conventions.
  * `$\t$` insert a tab
  * `$\uhhhh$` insert a Unicode character where *hhhh* is the hex value of the Unicode character
 
@@ -185,7 +184,7 @@ Inside templates you can include comments as follows:
 $!this is a comment!$
 ```
 
-See section Groups below for comments you can have outside of templates.
+See section Group Files below for comments you can have outside of templates.
 
 ## Expressions
 This section describes each of the possible expressions.
@@ -204,15 +203,15 @@ For example:
 $hobbit$
 ```
 
-If the value of the hobbit attribute is "Bilbo Baggins" then the above expression results in
+If the value of the `hobbit` attribute is "Bilbo Baggins" then the above expression results in:
 
 ```
 Bilbo Baggins
 ```
 
-If the value of an attribute is null then the result is an empty string. If the value of an attribute is an array
-the result is a concatenation of all the values in the array. So using JSON syntax for arrays, suppose the
-attribute hobbits contains `[ "Samwise", "Frodo", "Bilbo" ]` then the expression
+If the value of an attribute is null then the result is an empty string (i.e. nothing). If the value of an attribute 
+is an array the result is a concatenation of all the values in the array. So using JSON syntax for arrays, suppose the
+attribute `hobbits` contains `[ "Samwise", "Frodo", "Bilbo" ]` then the expression
 
 ```
 $hobbits$
@@ -227,14 +226,44 @@ SamwiseFrodoBilbo
 This may not seem very useful but when we get to Map expressions and Options you will see how to make better
 use of arrays.
 
-If the attribute value is an object then you can access the values of its properties with this property
+### Property Reference
+If the attribute value is an object then you can access the values of its properties with this property reference
 syntax:
 
 ```
-attribute reference
-property reference
-attribute indirect
-property indirect
+Mr $hobbit.firstName$ $hobbit.lastName$,
+```
+
+If the value of the `hobbit` attribute is an object with properties firstName and lastName and those properties have
+values "Bilbo" and "Baggins" respectivly then the above template results in:
+
+```
+Mr Bilbo Baggins,
+```
+
+If the value of a property is also an object then the same dot property name syntax can be used to access properties
+of that object. This nesting of property references can be continued to any number of levels.
+
+For example if the hobbit object had a property called `name` and its value was an object with properties `first` and
+`last` it would look like this using JSON syntax:
+
+```
+{
+    name: {
+        first: "Bilbo",
+        last: "Baggins"
+    }
+}
+```
+
+The hobbit's first name could be accessed in a template expression like so:
+
+```
+$hobbit.name.first$
+```
+
+xxx attribute indirect
+xxx property indirect
 
 
 ### Include
@@ -243,6 +272,7 @@ xxx todo
 ### Map
 xxx todo
 
+xxx rot
 
 ### Zip
 xxx todo
@@ -282,19 +312,20 @@ todo explain evaluation of conditions
  !, &&, ||
 
 
-## Template definitions
+## Template Definition Files
 
 todo
 
-## Raw Templates
+## Raw Template Files
 
 todo
 
-## Groups
+## Group Files
 
 todo
+### Dictionaries
 
-group inheritance
+### Group inheritance
 
 ## Regions
 
