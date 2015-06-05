@@ -156,3 +156,12 @@ arg2 is $arg2$.
 arg3 is $arg3$.
 arg4 is $arg4$.
 arg5 is $arg5$.>>
+
+// wip
+functionTests(list, string) ::= <<
+ $first(list)$
+ $/first()$
+>>
+
+first() ::= " this is first template "
+

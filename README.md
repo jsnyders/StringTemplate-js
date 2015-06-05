@@ -5,6 +5,38 @@ Under construction
 This will be a pure JavaScript implementation of the StringTemplate v4.
 Templates will be compiled to JavaScript
 
+## Update 4-Jun
+
+What works at least a little
+
+* compile and process directory of template files (.st)
+* compile and process directory of raw template files (.st)
+* compile and process group file (.stg)
+* configurable start, stop delimiters and escaping delimiters
+* comments
+* dictionaries
+* literals string, true, false, lists
+* escapes such as $\t$ and $\\\\$
+* attribute expressions including implicit iteration over list/array attributes
+* property reference expressions
+* if, else if, else conditions including &&, ||, !
+* imports
+* template include expressions and argument passing by position or name and pass through (...)
+* expression options
+* sub templates (not too well tested especially with map or passing args)
+* map expressions (not too well tested)
+* function expressions
+* auto indent writer
+
+What doesn't work or isn't tested
+
+* indirect property reference
+* indirect template include
+* rotating through templates while mapping 
+* zippin multiple lists/arrays while mapping
+* regions
+
+
 ## First Milestone
 
 End to end processing of a simple template.
@@ -17,6 +49,8 @@ stst -t compiler group.compiledGroup test/include.stg.ast > test/include_stg.js
 ```
 
 This will be a single command once it is complete enough to compile its own code generation template.
+
+Update: there is now a stc command in bin folder that does both steps (still uses Java stst to bootstrap)
 
  * Step 2 Execute the compiled template with the following. TODO look at simplifying the API and providing a 
  JavaScript implementation of stst.
@@ -42,6 +76,9 @@ It produces the same output as the Java reference implementation
 ```
 stst -t test include.main test/includeData.json
 ```
+
+Update: there is now a JavaScript version of stst in the bin folder which simplifies step 2 - you can 
+try out compiled templates from the command line with JSON data.
 
 ## License
 BSD

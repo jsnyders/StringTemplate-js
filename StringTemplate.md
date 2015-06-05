@@ -11,6 +11,8 @@ The purpose of a template system is to produce output text where the output is g
 The templates are made up of literal text that is copied to the output as is and embedded expressions that specify what 
 data is to be inserted into the output.
 
+Official [documentation](https://theantlrguy.atlassian.net/wiki/display/ST4/StringTemplate+4+Documentation) for StringTemplate.
+
 ## Templates
 Templates are literal text with embedded template expressions. Expressions are delimited with a special start and stop
 character. All text outside of these characters is copied to the output nearly verbatim (see Escaping Expression 
@@ -19,8 +21,11 @@ the output. The insertion happens at the point where the expression occurs withi
 
 StringTemplate templates enforce a separation between the template and the data (this is also known as model view 
 separation where the data is referred to the model and the template is the view). Templates cannot implement
-any business logic*. The template cannot modify the data model.  Processing the template produces no side effects. 
-Templates do have a constructs for conditionals, looping, a small number of built-in functions, 
+any business logic*. The template cannot modify the data model. Processing the template produces no side effects.
+The data model is created prior to template processing, which means the order of data acquisition is independent of the
+order that the data is referenced by template processing.
+
+Templates *do* have a constructs for conditionals, looping, a small number of built-in functions, 
 a few options to control the output rendering, and calling templates with arguments. These features are necessary 
 for the efficient generation of output text. They are not sufficient to implement business logic.
 
@@ -183,6 +188,8 @@ Inside templates you can include comments as follows:
 $!this is a comment!$
 ```
 
+Comments are not copied to the output.
+
 See section Group Files below for comments you can have outside of templates.
 
 ## Expressions
@@ -227,7 +234,7 @@ use of arrays.
 
 ### Property Reference
 If the attribute value is an object then you can access the values of its properties with this property reference
-syntax: `_attribute_._property_`
+syntax: `*attribute*.*property*`
 
 For example:
 
@@ -329,17 +336,35 @@ anchor
 ### Anonymous Sub Templates
 
 ### Functions
-todo:
-first
-rest
-last
-trunc
-strip
-reverse
-length
+StringTemplate defines a small fixed number of functions that operate on data values. 
+The syntax for calling functions is the same as template includes. In practice this doesn't cause problems because
+the number of functions is very small. If you want to name a template the same as a function name then you will need
+to call it with a full path syntax. For example `$/first(arg1)$`. Why this works will become clear later.
 
-strlen
-trim
+The following functions expect to be passed an array. That means they make the most sense when given an array but
+they are forgiving enough if you pass a different type of data.
+
+* `first(a)` Returns the first element of the input array `a` or `a` if it is not an array
+
+* `last(a)` Returns the last element of the input array `a` or `a` if it is not an array. 
+
+* `rest(a)` Returns all but the first element of the input array `a` or null if it is not an array.
+
+* `trunc(a)` Returns all but the last element of the input array `a` or null if it is not an array.
+
+* `length(a)` Returns length of the input array `a` or 0 if input is null or undefined or 1 if input is a scalar value or object 
+ 
+* `reverse(a)` Returns an array that is the same as the input array `a` but with the elements reversed or `a` if it is not an array
+
+* `strip(a)` Returns an array that is the same as the input array `a` but with all null elements removed or `a` if it is not an array
+
+The following functions expect to be given a string. It is a runtime error if the input argument is not a string.
+
+* `trim(str)` Return copy of the input `str` with leading and trailing white space characters removed.
+
+* `strlen(str)` Return the length of a string.
+
+xxx discus the two return values that are numbers
 
 ### Conditionals
 todo:
