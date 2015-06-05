@@ -2,7 +2,7 @@
 
 Under construction
 
-This will be a pure JavaScript implementation of the StringTemplate v4.
+This will be a pure JavaScript implementation of the [StringTemplate v4](http://www.stringtemplate.org/).
 Templates will be compiled to JavaScript
 
 ## Update 4-Jun
