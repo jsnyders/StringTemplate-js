@@ -8,6 +8,10 @@ var assert = require("assert"),
 var group = {};
 
 var render = function(w, c) { return 0; };
+render.args = [
+    { name: "arg1" },
+    { name: "arg2", default: "def" }
+];
 
 describe("Template", function() {
 
@@ -18,7 +22,76 @@ describe("Template", function() {
             assert.deepEqual(t.scope, {}, "empty scope");
             assert.strictEqual(t.owningGroup, group, "correct group");
             assert.strictEqual(t.render, render, "correct render function");
+            assert.strictEqual(t.isAnonSubtemplate, false, "not an anonymous sub template by default");
+            assert.strictEqual(t.argsPassThrough, false, "starts with args pass through false");
         });
+
+        it("should be empty anonymous sub template.", function() {
+            var t = new Template({}, group, render, true);
+
+            assert.deepEqual(t.scope, {}, "empty scope");
+            assert.strictEqual(t.owningGroup, group, "correct group");
+            assert.strictEqual(t.render, render, "correct render function");
+            assert.strictEqual(t.isAnonSubtemplate, true, "is an anonymous sub template");
+            assert.strictEqual(t.argsPassThrough, false, "starts with args pass through false");
+        });
+    });
+
+    describe("setArgs", function() {
+        it("should contain any attributes added by position.", function () {
+            var t = new Template({}, group, render);
+
+            t.setArgs(["foo", "bar"]);
+            assert.strictEqual(t.scope.arg1, "foo", "got value added");
+            assert.strictEqual(t.scope.arg2, "bar", "got value added");
+        });
+
+        it("should contain any attributes added by name.", function () {
+            var t = new Template({}, group, render);
+
+            t.setArgs({arg1: "foo", arg2: "bar"});
+            assert.strictEqual(t.scope.arg1, "foo", "got value added");
+            assert.strictEqual(t.scope.arg2, "bar", "got value added");
+        });
+
+        it("should throw an error if attribute name is invalid.", function() {
+            var t = new Template({}, group, render);
+
+            // Note the reference impl only checks that the name doesn't contain a "."
+            // I think it should validate that the name is an ID.
+            assert.throws(function() {
+                t.setArgs({"foo.bar": "value1"});
+            }, /Invalid character.*foo\.bar/, "throws error");
+        });
+
+        it("should report a runtime error if name doesn't match a formal arg.", function () {
+            var rterr,
+                t = new Template({}, {
+                    reportRuntimeError: function(err) {
+                        rterr = err; 
+                    }
+                }, render);
+
+            t.setArgs({arg1: "foo", argX: "bar"});
+            assert.ok(/No such named argument.*argX/.test(rterr), "got expected runtime error");
+            assert.strictEqual(t.scope.arg1, "foo", "got value added");
+        });
+
+        it("should report a runtime error if two many args.", function () {
+            var rterr,
+                t = new Template({}, {
+                    reportRuntimeError: function(err) {
+                        rterr = err;
+                    }
+                }, render);
+
+            t.setArgs(["foo", "bar", "baz"]);
+            assert.ok(/Too many actual arguments.*2/.test(rterr), "got expected runtime error");
+            assert.strictEqual(t.scope.arg1, "foo", "got value added");
+        });
+        // xxx test OK to set fewer
+        // xxx test pass through
+        // xxx test defaults, pass through after write
     });
 
     describe("add", function() {
@@ -40,6 +113,16 @@ describe("Template", function() {
             t.add("foo", "value1");
             assert.strictEqual(t.scope.foo, "value1", "got value added");
             assert.strictEqual(t.scope.bar, "base2", "got value from parent scope");
+        });
+
+        it("should throw an error if attribute name is invalid.", function() {
+            var t = new Template({}, group, render);
+
+            // Note the reference impl only checks that the name doesn't contain a "."
+            // I think it should validate that the name is an ID.
+            assert.throws(function() {
+                t.add("foo.bar", "value1");
+            }, /Invalid character.*foo\.bar/, "throws error");
         });
     });
 
@@ -73,5 +156,6 @@ describe("Template", function() {
         });
     });
 
+    // xxx set scope
     // xxx todo write
 });
