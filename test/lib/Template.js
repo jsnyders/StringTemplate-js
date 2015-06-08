@@ -44,6 +44,7 @@ describe("Template", function() {
             t.setArgs(["foo", "bar"]);
             assert.strictEqual(t.scope.arg1, "foo", "got value added");
             assert.strictEqual(t.scope.arg2, "bar", "got value added");
+            assert.strictEqual(t.argsPassThrough, false, "starts with args pass through false");
         });
 
         it("should contain any attributes added by name.", function () {
@@ -52,6 +53,7 @@ describe("Template", function() {
             t.setArgs({arg1: "foo", arg2: "bar"});
             assert.strictEqual(t.scope.arg1, "foo", "got value added");
             assert.strictEqual(t.scope.arg2, "bar", "got value added");
+            assert.strictEqual(t.argsPassThrough, false, "starts with args pass through false");
         });
 
         it("should throw an error if attribute name is invalid.", function() {
@@ -89,9 +91,72 @@ describe("Template", function() {
             assert.ok(/Too many actual arguments.*2/.test(rterr), "got expected runtime error");
             assert.strictEqual(t.scope.arg1, "foo", "got value added");
         });
-        // xxx test OK to set fewer
-        // xxx test pass through
-        // xxx test defaults, pass through after write
+
+        it("should allow setting fewer attributes added by position.", function () {
+            var t = new Template({}, group, render);
+
+            t.setArgs(["foo"]);
+            assert.strictEqual(t.scope.arg1, "foo", "got value added");
+            assert.strictEqual(t.scope.arg2, undefined, "no value added");
+        });
+
+        it("should allow setting fewer attributes by name.", function () {
+            var t = new Template({}, group, render);
+
+            t.setArgs({arg2: "bar"});
+            assert.strictEqual(t.scope.arg1, undefined, "no value added");
+            assert.strictEqual(t.scope.arg2, "bar", "got value added");
+        });
+
+        it("should contain any attributes added by position with pass through.", function () {
+            var t = new Template({}, group, render);
+
+            t.setArgs([], true);
+            assert.strictEqual(t.scope.arg1, undefined, "no value added"); // note pass through not applied yet
+            assert.strictEqual(t.scope.arg2, undefined, "no value added"); // note pass through not applied yet
+            assert.strictEqual(t.argsPassThrough, true, "pass through true");
+        });
+
+        it("should contain any attributes added by name with pass through.", function () {
+            var t = new Template({}, group, render);
+
+            t.setArgs({arg1: "foo"}, true);
+            assert.strictEqual(t.scope.arg1, "foo", "got value added");
+            assert.strictEqual(t.scope.arg2, undefined, "no value added"); // note pass through not applied yet
+            assert.strictEqual(t.argsPassThrough, true, "pass through true");
+        });
+
+        it("should overwrite when called more than once by position.", function () {
+            var t = new Template({}, group, render);
+
+            t.setArgs(["foo", "bar"]);
+            assert.strictEqual(t.scope.arg1, "foo", "got value added");
+            assert.strictEqual(t.scope.arg2, "bar", "got value added");
+            t.setArgs(["abc"]);
+            assert.strictEqual(t.scope.arg1, "abc", "got value added");
+            assert.strictEqual(t.scope.arg2, "bar", "got value added");
+
+            t.setArgs({arg2: "two"});
+            assert.strictEqual(t.scope.arg1, "abc", "got value added");
+            assert.strictEqual(t.scope.arg2, "two", "got value added");
+        });
+
+        it("should overwrite when called more than once by name.", function () {
+            var t = new Template({}, group, render);
+
+            t.setArgs({arg1: "foo", arg2: "bar"});
+            assert.strictEqual(t.scope.arg1, "foo", "got value added");
+            assert.strictEqual(t.scope.arg2, "bar", "got value added");
+
+            t.setArgs({arg1: "abc"});
+            assert.strictEqual(t.scope.arg1, "abc", "got value added");
+            assert.strictEqual(t.scope.arg2, "bar", "got value added");
+
+            t.setArgs(["one", "two"]);
+            assert.strictEqual(t.scope.arg1, "one", "got value added");
+            assert.strictEqual(t.scope.arg2, "two", "got value added");
+        });
+
     });
 
     describe("add", function() {
@@ -156,6 +221,25 @@ describe("Template", function() {
         });
     });
 
-    // xxx set scope
+    describe("setScope", function() {
+        it("should change the old scope to the new one.", function() {
+            var parentOrig = { foo: "base1orig", bar:"base2orig"},
+                parentNew = { foo: "base1new", bar:"base2new"},
+                t = new Template(Object.create(parentOrig), group, render);
+
+            t.setArgs(["one", "two"]);
+            assert.strictEqual(t.scope.foo, "base1orig", "got value from parent scope");
+            assert.strictEqual(t.scope.bar, "base2orig", "got value from parent scope");
+            assert.strictEqual(t.scope.arg1, "one", "got value added");
+            assert.strictEqual(t.scope.arg2, "two", "got value added");
+            t.setScope(Object.create(parentNew));
+            assert.strictEqual(t.scope.foo, "base1new", "got value from parent scope");
+            assert.strictEqual(t.scope.bar, "base2new", "got value from parent scope");
+            assert.strictEqual(t.scope.arg1, "one", "got value added");
+            assert.strictEqual(t.scope.arg2, "two", "got value added");
+        });
+    });
+
     // xxx todo write
+    // xxx test defaults, pass through after write
 });
