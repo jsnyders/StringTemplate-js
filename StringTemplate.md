@@ -19,7 +19,7 @@ character. All text outside of these characters is copied to the output nearly v
 Delimiters below). Text inside the delimiters are template expressions that determine how data is to be inserted into
 the output. The insertion happens at the point where the expression occurs within the literal text.
 
-StringTemplate templates enforce a separation between the template and the data (this is also known as model view 
+StringTemplate templates enforce a separation between the template and the data (this is also known as model - view 
 separation where the data is referred to the model and the template is the view). Templates cannot implement
 any business logic*. The template cannot modify the data model. Processing the template produces no side effects.
 The data model is created prior to template processing, which means the order of data acquisition is independent of the
@@ -234,7 +234,7 @@ use of arrays.
 
 ### Property Reference
 If the attribute value is an object then you can access the values of its properties with this property reference
-syntax: `*attribute*.*property*`
+syntax: *attribute*.*property*
 
 For example:
 
@@ -253,7 +253,9 @@ If the value of a property is also an object then the same dot property name syn
 of that object. This nesting of property references can be continued to any number of levels.
 
 For example if the hobbit object had a property called `name` and its value was an object with properties `first` and
-`last` it would look like this using JSON syntax:
+`last`.  
+
+(Using JSON syntax it would look like this
 
 ```
 {
@@ -263,8 +265,9 @@ For example if the hobbit object had a property called `name` and its value was 
     }
 }
 ```
+)
 
-The hobbit's first name could be accessed in a template expression like so:
+Then the hobbit's first name could be accessed in a template expression like so:
 
 ```
 $hobbit.name.first$
@@ -281,7 +284,7 @@ modular templates and include the output of one template in another. Templates a
 in expressions. Templates can also define names for data values they expect to be given. These names are called 
 formal arguments or simply arguments or parameters. The syntax for defining templates with their name and arguments
 is given later in the Template Definition Files and Group Files sections. This section is about how to include templates
-from other templates. The syntax looks very much like a function call in various programming languages. And similar
+from other templates. The syntax looks very much like a function call in various programming languages. Indeed, similar
 terminology is sometimes used. Rather than saying template A includes template B you could say template A calls or 
 invokes template B.
 
@@ -326,6 +329,8 @@ xxx todo
 
 ### Expression Options
 
+todo 
+
 separator
 format
 null
@@ -335,16 +340,18 @@ anchor
 
 ### Anonymous Sub Templates
 
+todo
+
 ### Functions
 StringTemplate defines a small fixed number of functions that operate on data values. 
 The syntax for calling functions is the same as template includes. In practice this doesn't cause problems because
 the number of functions is very small. If you want to name a template the same as a function name then you will need
-to call it with a full path syntax. For example `$/first(arg1)$`. Why this works will become clear later.
+to call it with absolute path syntax. For example `$/first(arg1)$`. Why this works will become clear later.
 
 The following functions expect to be passed an array. That means they make the most sense when given an array but
 they are forgiving enough if you pass a different type of data.
 
-* `first(a)` Returns the first element of the input array `a` or `a` if it is not an array
+* `first(a)` Returns the first element of the input array `a` or `a` if it is not an array.
 
 * `last(a)` Returns the last element of the input array `a` or `a` if it is not an array. 
 
@@ -352,11 +359,11 @@ they are forgiving enough if you pass a different type of data.
 
 * `trunc(a)` Returns all but the last element of the input array `a` or null if it is not an array.
 
-* `length(a)` Returns length of the input array `a` or 0 if input is null or undefined or 1 if input is a scalar value or object 
+* `length(a)` Returns length of the input array `a` or 0 if input is null or undefined or 1 if input is a scalar value or object.
  
-* `reverse(a)` Returns an array that is the same as the input array `a` but with the elements reversed or `a` if it is not an array
+* `reverse(a)` Returns an array that is the same as the input array `a` but with the elements reversed or `a` if it is not an array.
 
-* `strip(a)` Returns an array that is the same as the input array `a` but with all null elements removed or `a` if it is not an array
+* `strip(a)` Returns an array that is the same as the input array `a` but with all null elements removed or `a` if it is not an array.
 
 The following functions expect to be given a string. It is a runtime error if the input argument is not a string.
 
@@ -390,10 +397,15 @@ todo
 ## Group Files
 
 todo
+
 ### Dictionaries
+
+todo
 
 ### Group inheritance
 
+todo
+
 ## Regions
 
-TODO
+todo

@@ -206,6 +206,20 @@ describe("Template", function() {
             assert.strictEqual(t.scope.bar, undefined, "scope is empty after clear");
         });
 
+        it("should clear pass through flag.", function() {
+            var t = new Template({}, group, render);
+
+            assert.strictEqual(t.scope.arg1, undefined, "scope is empty");
+            assert.strictEqual(t.argsPassThrough, false, "pass through is false");
+            t.setArgs(["value1"], true);
+            assert.strictEqual(t.scope.arg1, "value1", "got value added");
+            assert.strictEqual(t.argsPassThrough, true, "pass through is true");
+            t.clear();
+            assert.deepEqual(t.scope, {}, "empty scope after clear");
+            assert.strictEqual(t.scope.arg1, undefined, "scope is empty after clear");
+            assert.strictEqual(t.argsPassThrough, false, "pass through is false");
+        });
+
         it("should not affect parent scope.", function() {
             var parent = { foo: "base1", bar:"base2"},
                 t = new Template(Object.create(parent), group, render);
@@ -240,6 +254,101 @@ describe("Template", function() {
         });
     });
 
-    // xxx todo write
-    // xxx test defaults, pass through after write
+    describe("write", function() {
+        it("should call render function with writer and context.", function() {
+            var t, rfn,
+                writer = {},
+                context = {},
+                rfnCalled = false;
+
+            rfn = function(w, c) {
+                assert.strictEqual(w, writer, "render function got correct writer");
+                assert.strictEqual(c, context, "render function got correct context");
+                rfnCalled = true;
+            };
+
+            t = new Template({}, group, rfn);
+            t.write(writer, context);
+            assert.strictEqual(rfnCalled, true, "render function called");
+        });
+
+        it("should finialize arguments applying defaults.", function() {
+            var t, rfn, foo, bar,
+                writer = {},
+                context = {},
+                rfnCalled = false;
+
+            rfn = function(w, c) {
+                foo = this.scope.foo;
+                bar = this.scope.bar;
+                rfnCalled = true;
+            };
+            rfn.args = [ {name: "foo", default: "X"}, {name: "bar", default: "Y" }];
+
+            t = new Template({}, group, rfn);
+            t.setArgs(["A"]);
+            t.write(writer, context);
+            assert.strictEqual(rfnCalled, true, "render function called");
+            assert.strictEqual(foo, "A", "render function got correct arg");
+            assert.strictEqual(bar, "Y", "render function got correct arg");
+
+            t.clear();
+            t.setArgs([]);
+            t.write(writer, context);
+            assert.strictEqual(rfnCalled, true, "render function called");
+            assert.strictEqual(foo, "X", "render function got correct arg");
+            assert.strictEqual(bar, "Y", "render function got correct arg");
+
+            t.clear();
+            t.setArgs({"bar": "Q"});
+            t.write(writer, context);
+            assert.strictEqual(rfnCalled, true, "render function called");
+            assert.strictEqual(foo, "X", "render function got correct arg");
+            assert.strictEqual(bar, "Q", "render function got correct arg");
+        });
+
+        it("should finialize arguments applying pass through.", function() {
+            var t, rfn, foo, bar,
+                parentScope = { foo: "base1", bar:"base2"},
+                writer = {},
+                context = {},
+                rfnCalled = false;
+
+            rfn = function(w, c) {
+                foo = this.scope.foo;
+                bar = this.scope.bar;
+                rfnCalled = true;
+            };
+            rfn.args = [ {name: "foo", default: "X"}, {name: "bar", default: "Y" }];
+
+            t = new Template(Object.create(parentScope), group, rfn);
+            t.setArgs(["A"], true);
+            t.write(writer, context);
+            assert.strictEqual(rfnCalled, true, "render function called");
+            assert.strictEqual(foo, "A", "render function got correct arg");
+            assert.strictEqual(bar, "base2", "render function got correct arg");
+
+            t.clear();
+            t.setArgs([], true);
+            t.write(writer, context);
+            assert.strictEqual(rfnCalled, true, "render function called");
+            assert.strictEqual(foo, "base1", "render function got correct arg");
+            assert.strictEqual(bar, "base2", "render function got correct arg");
+
+            t.clear();
+            t.setArgs({"bar": "Q"}, true);
+            t.write(writer, context);
+            assert.strictEqual(rfnCalled, true, "render function called");
+            assert.strictEqual(foo, "base1", "render function got correct arg");
+            assert.strictEqual(bar, "Q", "render function got correct arg");
+
+            t.clear();
+            t.setArgs({"bar": "Q"}); // note no pass through here
+            t.write(writer, context);
+            assert.strictEqual(rfnCalled, true, "render function called");
+            assert.strictEqual(foo, "X", "render function got correct arg");
+            assert.strictEqual(bar, "Q", "render function got correct arg");
+        });
+    });
+
 });

@@ -2,8 +2,11 @@
 
 Under construction
 
-This will be a pure JavaScript implementation of the [StringTemplate v4](http://www.stringtemplate.org/).
-Templates will be compiled to JavaScript
+This will be a pure JavaScript implementation of [StringTemplate v4](http://www.stringtemplate.org/).
+Templates will be compiled to JavaScript. The intent is to be fully compatible with StringTemplate
+syntax. This means that the same template processed with the same data should produce the same
+output when processed with the Java (reference implementation) and this JavaScript implementation.
+See below for known differences. The API will **not** be compatible with the Java implementation.  
 
 ## Update 4-Jun
 
@@ -33,7 +36,7 @@ What doesn't work or isn't tested
 * indirect property reference
 * indirect template include
 * rotating through templates while mapping 
-* zippin multiple lists/arrays while mapping
+* zipping multiple lists/arrays while mapping
 * regions
 
 
