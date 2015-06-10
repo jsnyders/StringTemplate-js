@@ -41,6 +41,7 @@ $!comment on line alone doesn't add newline !$
     $testDictionaryAccessAlt("bar")$
     $testDictionaryAccessAlt("baz")$
     $names:simple();separator="\n"$
+    $testMap(names)$
 $conditions(conditions)$
 Make sure can call template in imported group: $sub("a", "b")$
 >>
@@ -165,3 +166,25 @@ functionTests(list, string) ::= <<
 
 first() ::= " this is first template "
 
+testMap(list) ::= <<
+Test Map:
+  first with \n separator:
+    $list:mapItem();separator="\n"$
+  with ", " separator:
+    $list:mapItem();separator=", "$
+  with optional label given:
+    $list:mapItem("thing");separator=", "$
+  $! xxx this doesn't work as I thought it might $list:mapItem(label="thing");separator=", "$ !$
+    $list:{x|$mapItem(item=x, label="thing")$};separator=", "$
+  with optional label given as index: $! does this belong here? it also tests sub templates with args and special i, i0 !$
+    $list:{x|$mapItem(item=x, label=i)$};separator=", "$
+    $list:{x|$mapItem(item=x, label=i0)$};separator=", "$
+  with ", " separator and null option:
+    $list:mapItem();separator=", ",null=mapItem("grape")$
+  with ", " separator, anchor, wrap, and null option:
+    start: $list:mapItem();separator=", ",anchor,wrap,null=mapItem("grape")$
+>>
+
+mapItem(item, label="item") ::= <%
+[$label$ $item$]
+%>

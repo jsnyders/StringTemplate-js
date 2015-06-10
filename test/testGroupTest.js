@@ -10,10 +10,12 @@ var assert = require("assert"),
 
 var spawn = require('child_process').spawn;
 
-function getSTReferenceOutput(group, template, data, callback) {
+function getSTReferenceOutput(group, template, data, callback, options) {
     var output = "";
     var errOutput = "";
-    var stst = spawn("stst", [group + "." + template], {
+    var args = (options || []).concat([options || "", group + "." + template]);
+console.log("xxx args: " + args.join(", "));
+    var stst = spawn("stst", args, {
         cwd: path.dirname(module.filename),
         stdio: ["pipe", "pipe", "pipe"]
     });
@@ -187,5 +189,25 @@ describe("test group test", function() {
 
     });
 
+    it("should generate same output as reference implementation for template testMap", function(done) {
+        var t,
+            group = st.loadGroup(testTemplateGroup),
+            writer = w.makeWriter({lineWidth: 20});
+
+        getSTReferenceOutput("testGroup", "testMap", {list: ["apple", "banana", null, "orange"]}, function(refOutput, errors) {
+            t = group.getTemplate("/testMap");
+            assert.notStrictEqual(t, null, "found a template");
+            // there are no arguments
+
+            console.log("xxx errors: " + errors);
+            console.log("xxx ref: " + refOutput);
+            t.setArgs([["apple", "banana", null, "orange"]]);
+            t.write(writer);
+            console.log("xxx js: " + writer.toString());
+            assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
+            done();
+        }, [ "-w", "20"]);
+
+    });
 
 });
