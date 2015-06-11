@@ -528,8 +528,9 @@ option
             if (!curGroup.isValidOption(optionName)) {
                 error("No such option " + optionName);
             }
+
             value = val || curGroup.defaultOptionValue(optionName);
-            if (!value) {
+            if (value === null) {
                 error("Value required for option " + optionName);
             }
             return {

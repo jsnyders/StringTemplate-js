@@ -73,9 +73,15 @@ var groupPrototype = {
     },
     defaultOptionValue: function(name) {
         if (name === "anchor") {
-            return true;
+            return {
+                type: "BOOLEAN",
+                value: true
+            };
         } else if (name === "wrap") {
-            return "\n";
+            return {
+                type: "STRING",
+                value: "\n"
+            };
         }
         return null;
     }
