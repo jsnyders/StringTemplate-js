@@ -173,7 +173,7 @@ Test Map:
   with ", " separator:
     $list:mapItem();separator=", "$
   with optional label given:
-    $list:mapItem("thing");separator=", "$
+$!xxx    $list:mapItem("thing");separator=", "$ this is broken because don't know how to skip the first arg. xxx !$
   $! xxx this doesn't work as I thought it might $list:mapItem(label="thing");separator=", "$ !$
     $list:{x|$mapItem(item=x, label="thing")$};separator=", "$
   with optional label given as index: $! does this belong here? it also tests sub templates with args and special i, i0 !$

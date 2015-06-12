@@ -443,10 +443,15 @@ subtemplate
                 template: t.value
             };
         }
-
+ 
 formalArgsNoDefault
-    = first:ID rest:( __ "," __ a:ID {return a;})* {
-            return makeList(first, rest);
+    = first:ID 
+            rest:( __ "," __ a:ID { return {
+                                            type: "FORMAL_ARG",
+                                            name: a.value
+                                        };
+                                    })* {
+            return makeList({type: "FORMAL_ARG", name: first.value}, rest);
         }
 
 ifstat
