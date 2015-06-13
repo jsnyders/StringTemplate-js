@@ -8,7 +8,7 @@ syntax. This means that the same template processed with the same data should pr
 output when processed with the Java (reference implementation) and this JavaScript implementation.
 See below for known differences. The API will **not** be compatible with the Java implementation.  
 
-## Update 4-Jun
+## Update 12-Jun
 
 What works at least a little
 
@@ -26,8 +26,8 @@ What works at least a little
 * imports
 * template include expressions and argument passing by position or name and pass through (...)
 * expression options
-* sub templates (not too well tested especially with map or passing args)
-* map expressions (not too well tested)
+* sub templates
+* map expressions
 * function expressions
 * auto indent writer
 
@@ -39,24 +39,41 @@ What doesn't work or isn't tested
 * zipping multiple lists/arrays while mapping
 * regions
 
+## Install
 
-## First Milestone
+TBD for now download or fork the project
+use npm link to add stc as a global command or you can give the path to stc in the bin folder
 
-End to end processing of a simple template.
+## Using
 
- * Step 1 Compile. Currently two steps using [stst](https://github.com/jsnyders/STSTv4) to bootstrap
+* Step 1 compile the templates using the stc command. For example:
 
 ```
-node compiler/stc test/include.stg > test/include.stg.ast
-stst -t compiler group.compiledGroup test/include.stg.ast > test/include_stg.js
+cd samples/hello
+stc hello.st
 ```
 
-This will be a single command once it is complete enough to compile its own code generation template.
+This produces `hello_stg.js` in the same folder. Type `stc -h` for help on stc command line options.
 
-Update: there is now a stc command in bin folder that does both steps (still uses Java stst to bootstrap)
+Templates can also be compiled from your own application using the API in compiler/stc.js. Grunt task TBD.
 
- * Step 2 Execute the compiled template with the following. TODO look at simplifying the API and providing a 
- JavaScript implementation of stst.
+NOTE: Currently the Java [stst](https://github.com/jsnyders/STSTv4) program is needed to bootstrap compiling because
+StringTemplate is used to generate the compiled template JavaScript code. Make sure you have the latest stst installed
+so that it runs with the command `stst`. Ignore the runtime errors output by stst.
+ 
+* Step 2 Execute the compiled template. This can be done with the JavaScript version of stst that is in the bin folder.
+
+```
+cd samples/hello
+../../bin/stst hello hello.json
+```
+
+The first argument is the template name without the _stg.js suffix. The second argument is a JSON file that supplies
+the data for the template.
+
+NOTE: The JavaScript version of stst is very rough. Ignore the debugging output for now.
+
+To execute the template from your application TBD the following code is a little out of date. Take a look at the unit tests.
 
 ```
 node
@@ -74,14 +91,6 @@ t.write(writer);
 console.log(writer.toString());
 ```
 
-It produces the same output as the Java reference implementation
-
-```
-stst -t test include.main test/includeData.json
-```
-
-Update: there is now a JavaScript version of stst in the bin folder which simplifies step 2 - you can 
-try out compiled templates from the command line with JSON data.
 
 ## License
 BSD
@@ -100,4 +109,4 @@ OS new line. A lone cr may be unlikely. One way to get one is with $"\r"$.
 * The Java implementation allows any start or stop delimiter even if they will later cause confusion. 
 This implementation restricts the delimiters to "#$%^&*<>"
 
-* The JavaScript implementation doesn't support the v3 old style group file header
+* The JavaScript implementation doesn't support the old v3 style group file header

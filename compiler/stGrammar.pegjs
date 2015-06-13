@@ -589,7 +589,7 @@ mapExpr
 mapExpr
     = m1:memberExpr zip:( mn:( __ "," __ m:memberExpr { return m; } )+ __ ":" __ tr:mapTemplateRef { return [ mn, tr ]; } )?
         maps:( ":" __ first:mapTemplateRef rest:( __ "," __ r:mapTemplateRef { return r; } )* { return makeList(first, rest); } )* {
-                var res = m1;
+                var i, expr, res = m1;
                 if (zip) {
                     res = {
                         type: "ZIP",
@@ -603,6 +603,17 @@ mapExpr
                         expr: res,
                         using: maps
                     };
+                    // need to handle the implicit first argument
+                    // xxx deal with array of arrays here
+                    for (var i = 0; i < maps[0].length; i++) {
+                        expr = maps[0][i];
+                        if (expr.type === "INCLUDE") {
+                            expr.args.splice(0, 0, {
+                                                   "type": "STRING",
+                                                   "value": ""
+                                               });
+                        }
+                    }
                 }
                 return res;
             }
