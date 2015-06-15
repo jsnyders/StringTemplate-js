@@ -188,3 +188,9 @@ Test Map:
 mapItem(item, label="item") ::= <%
 [$label$ $item$]
 %>
+
+testMapRot(board) ::= <<
+Test Map Rot:
++-+-+-+
+$board:{x||$x$|},{x|$x$|},{x|$x$|$\n$+-+-+-+$\n$}$
+>>

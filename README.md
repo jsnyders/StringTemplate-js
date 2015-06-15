@@ -28,6 +28,7 @@ What works at least a little
 * expression options
 * sub templates
 * map expressions
+* rotating through templates while mapping 
 * function expressions
 * auto indent writer
 
@@ -35,7 +36,6 @@ What doesn't work or isn't tested
 
 * indirect property reference
 * indirect template include
-* rotating through templates while mapping 
 * zipping multiple lists/arrays while mapping
 * regions
 

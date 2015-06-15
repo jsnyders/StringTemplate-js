@@ -14,7 +14,7 @@ function getSTReferenceOutput(group, template, data, callback, options) {
     var output = "";
     var errOutput = "";
     var args = (options || []).concat([options || "", group + "." + template]);
-console.log("xxx args: " + args.join(", "));
+
     var stst = spawn("stst", args, {
         cwd: path.dirname(module.filename),
         stdio: ["pipe", "pipe", "pipe"]
@@ -210,4 +210,21 @@ describe("test group test", function() {
 
     });
 
+    it("should generate same output as reference implementation for template testMapRot", function(done) {
+        var t,
+            group = st.loadGroup(testTemplateGroup),
+            writer = w.makeWriter();
+
+        getSTReferenceOutput("testGroup", "testMapRot", {board: ["x", " ", "X", "O", "O", "X", " ", " ", " "]}, function(refOutput, errors) {
+            t = group.getTemplate("/testMapRot");
+            assert.notStrictEqual(t, null, "found a template");
+            // there are no arguments
+
+            t.setArgs({board:["x", " ", "X", "O", "O", "X", " ", " ", " "]});
+            t.write(writer);
+            assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
+            done();
+        });
+
+    });
 });
