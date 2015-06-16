@@ -194,3 +194,16 @@ Test Map Rot:
 +-+-+-+
 $board:{x||$x$|},{x|$x$|},{x|$x$|$\n$+-+-+-+$\n$}$
 >>
+
+testPropIndirect(names, propName) ::= <<
+$names:testPropIndirectRefSub(propName);separator="\n"$
+>>
+
+// xxx figure out why there is often a difference of an extra new line between this and ref impl!
+testPropIndirectRefSub(obj, prop) ::= <<
+test with indirect string last: $obj.("last")$
+test with indirect subtemplate {last}: $obj.({last})$
+test with value of property $prop$ is: $obj.(prop)$
+test with template include getPropName(): $obj.(getPropName())$>>
+
+getPropName() ::= <%first%>

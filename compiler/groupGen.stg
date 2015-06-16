@@ -173,7 +173,7 @@ s.$a.name$
 // st.prop(st.prop(a, "foo"), "xxx")
 // xxx for now assume just one property reference 
 exprMEMBER_EXPR(a) ::= <%
-st.prop(g, $({expr$a.object.type$})(a.object)$, $property(first(a.properties))$)
+st.prop(s, g, rc, $({expr$a.object.type$})(a.object)$, $property(first(a.properties))$)
 %>
 
 property(p) ::= <%
@@ -184,7 +184,10 @@ propertyPROP(p) ::= <%"$p;format="string"$"%>
 
 propertyPROP_IND(p) ::= <%$({expr$p.type$})(p)$%>
 
-/* returns a template with arguments added */
+/* 
+returns a template with arguments added 
+todo optimize to remove call to setArgs if there are no args to set
+*/
 exprINCLUDE(a) ::= <<
 (function() {
     var t = g.getTemplate("$a.templateName;format="string"$", s);
