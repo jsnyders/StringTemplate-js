@@ -737,7 +737,7 @@ primary
                 return {
                     type: "INCLUDE_IND",
                     expr: e,
-                    args: a
+                    args: a.value
                 };
             } else {
                 return {

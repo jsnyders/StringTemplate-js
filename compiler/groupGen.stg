@@ -200,6 +200,23 @@ exprINCLUDE(a) ::= <<
 })()
 >>
 
+/* 
+returns a template with arguments added 
+todo optimize to remove call to setArgs if there are no args to set
+*/
+exprINCLUDE_IND(a) ::= <<
+(function() {
+    var name = st.toString(s, g, rc, $({expr$a.expr.type$})(a.expr)$),
+        t = g.getTemplate(name, s);
+    t.setArgs($\\$
+    $if(a.argsNamed)${ $else$[ $endif$$\\$
+    $a.args:includeArgs();separator=",\n"$
+    $if(a.argsNamed)$ }$else$ ]$endif$$\\$
+    $if(a.argsPassThrough)$, true$endif$);
+    return t;
+})()
+>>
+
 includeArgs(a) ::= <%
 $if(a.argName)$
 "$a.argName;format="string"$": $({expr$a.type$})(a)$

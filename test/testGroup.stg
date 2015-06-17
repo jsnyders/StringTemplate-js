@@ -208,3 +208,9 @@ test with value of property $prop$ is: $obj.(prop)$
 test with template include getPropName(): $obj.(getPropName())$>>
 
 getPropName() ::= <%first%>
+
+testIncludeIndirect() ::= <<
+$(getIncludeName())("A", "B")$
+>>
+
+getIncludeName() ::= <%sub%>

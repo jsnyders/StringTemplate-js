@@ -8,7 +8,7 @@ syntax. This means that the same template processed with the same data should pr
 output when processed with the Java (reference implementation) and this JavaScript implementation.
 See below for known differences. The API will **not** be compatible with the Java implementation.  
 
-## Update 12-Jun
+## Update 17-Jun
 
 What works at least a little
 
@@ -31,11 +31,11 @@ What works at least a little
 * rotating through templates while mapping 
 * function expressions
 * auto indent writer
+* indirect property reference
+* indirect template include
 
 What doesn't work or isn't tested
 
-* indirect property reference
-* indirect template include
 * zipping multiple lists/arrays while mapping
 * regions
 
