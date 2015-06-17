@@ -49,7 +49,8 @@ Make sure can call template in imported group: $sub("a", "b")$
 
 testEscapes() ::= <<
 Test Escapes:
-The { and } should be handled as regular textx
+The { and } should be handled as regular text
+} is OK at beginning of a line also
 Start char: \$
 Backslash alone is fine: \. It can also be doubled \\.
 To get \\\$ you need \\\\\\\$.

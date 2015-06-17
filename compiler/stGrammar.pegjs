@@ -354,8 +354,9 @@ templateFileRaw
             return curGroup;
         }
 
+/* xxx the !(...) used to include / "}" why was that? */
 template
-    = e:(!(INDENT? START_CHAR "elseif" / INDENT? START_CHAR "else" / INDENT? START_CHAR "endif" / "}" ) i:element { return i; })* { return {
+    = e:(!(INDENT? START_CHAR "elseif" / INDENT? START_CHAR "else" / INDENT? START_CHAR "endif"  ) i:element { return i; })* { return {
                 type: "TEMPLATE",
                 value: e || null // xxx should this be null or text token with empty string value
             };
@@ -588,7 +589,7 @@ mapExpr
  */
 mapExpr
     = m1:memberExpr zip:( mn:( __ "," __ m:memberExpr { return m; } )+ __ ":" __ tr:mapTemplateRef { return [ mn, tr ]; } )?
-        maps:( ":" __ first:mapTemplateRef rest:( __ "," __ r:mapTemplateRef { return r; } )* { return makeList(first, rest); } )* {
+        maps:( __ ":" __ first:mapTemplateRef rest:( __ "," __ r:mapTemplateRef { return r; } )* { return makeList(first, rest); } )* {
                 var i, expr, res = m1;
                 if (zip) {
                     res = {
@@ -841,12 +842,12 @@ RESERVED
     = "true"
     / "false"
     / "if"
-    / "else"
-    / "elseif"
-    / "endif"
+    / "else "
+    / "elseif "
+    / "endif "
     / "super"
-    / "import"
-    / "default"
+/*xxx    / "import" should be able to have a template by this name */
+/*xxx    / "default" should be able to have a property by this name */
 /*    / "key" xxx */
     / "group"
     / "delimiters"
