@@ -243,7 +243,7 @@ exprLIST(a) ::= <<[ $a.value:listItem();separator=", "$ ]>>
 
 listItem(item) ::= <<$({expr$item.type$})(item)$>>
 
-exprSUBTEMPLATE(a) ::= <<st.makeSubTemplate(group, function(w, rc) {
+exprSUBTEMPLATE(a) ::= <<st.makeSubTemplate(g, function(w, rc) {
          var g = this.owningGroup,
              s = this.scope;
          $strip(a.template):templateElement()$

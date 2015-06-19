@@ -434,8 +434,8 @@ region
  * ignore final INDENT before } as it's not part of outer indent
  */
 subtemplate
-    = "{" &{subtemplateDepth += 1; return true;} args:( a:formalArgsNoDefault "|" {return a;})? 
-        t:template INDENT? "}" {
+    = "{" &{subtemplateDepth += 1; return true;} __ args:( a:formalArgsNoDefault __ "|" __ {return a;})? 
+        t:template INDENT? __ "}" {
             subtemplateDepth -= 1;
             outside = false;
             return {
@@ -731,7 +731,7 @@ primary
     / s:STRING { return s; }
     / subtemplate
     / list
-    / &{return inConditional;} "(" c:conditional ")" { return c }
+    / &{return inConditional;} "(" c:conditional ")" { return c; }
     / &{return !inConditional;} "(" e:expr ")" a:(	"(" a:argExprList? ")" { return a; } )? {
             if (a) {
                 return {

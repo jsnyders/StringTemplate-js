@@ -37,7 +37,10 @@ var fs = require("fs"),
     parser = require("./stGrammar.js"),
     makeGroup = require("./group.js").makeGroup,
     stGroup = require("../lib/stGroup.js"),
-    util = require("../lib/util.js");
+    util = require("../lib/util.js"),
+    st = require("../lib/stRuntime"),
+    aiw = require("../lib/autoIndentWriter"),
+    groupGenSTG = require("./groupGen_stg");
 
 var VERSION = "0.1.0";
 
@@ -117,6 +120,8 @@ function compileGroupFile(file, options, callback) {
         logError(file, ex);
         callback(Error("Failed to compile '" + file + "'"));
     }
+    // xxx
+    //generateBootstrap(baseDir, parseOptions, callback);
     generate(baseDir, parseOptions, callback);
 }
 
@@ -241,6 +246,31 @@ function writeFile(filePath, text) {
 }
 
 function generate(baseDir, options, callback) {
+    var astFilename, filename, group, writer, t,
+        groupAST = options.group;
+
+    // xxx any pre processing of parsing output needed?
+    groupAST.date = (new Date()).toString();
+
+    if (options.outputAST) {
+        astFilename = path.join(baseDir, groupAST.fileName + "_stg_ast.json");
+        writeFile(astFilename, JSON.stringify({g: groupAST}, null, 4));
+    }
+
+    // xxx generate
+    group = st.loadGroup(groupGenSTG);
+    writer = aiw.makeWriter();
+
+    t = group.getTemplate("/compiledGroup");
+    t.setArgs({g: groupAST});
+    t.write(writer);
+    filename = path.join(baseDir, groupAST.fileName + "_stg.js"); // xxx _stg vs _st?
+    writeFile(filename, writer.toString());
+    // xxx minify option
+    callback(null);
+}
+
+function generateBootstrap(baseDir, options, callback) {
     var astFilename, filename,
         groupAST = options.group;
 
