@@ -434,7 +434,7 @@ region
  * ignore final INDENT before } as it's not part of outer indent
  */
 subtemplate
-    = "{" &{subtemplateDepth += 1; return true;} __ args:( a:formalArgsNoDefault __ "|" __ {return a;})? 
+    = "{" &{subtemplateDepth += 1; return true;} args:( __ a:formalArgsNoDefault __ "|" __ {return a;})? 
         t:template INDENT? __ "}" {
             subtemplateDepth -= 1;
             outside = false;

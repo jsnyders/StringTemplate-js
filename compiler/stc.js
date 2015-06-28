@@ -121,8 +121,8 @@ function compileGroupFile(file, options, callback) {
         callback(Error("Failed to compile '" + file + "'"));
     }
     // xxx
-    //generateBootstrap(baseDir, parseOptions, callback);
-    generate(baseDir, parseOptions, callback);
+    generateBootstrap(baseDir, parseOptions, callback);
+    //generate(baseDir, parseOptions, callback);
 }
 
 function parseDir(rootDir, options) {
@@ -257,7 +257,6 @@ function generate(baseDir, options, callback) {
         writeFile(astFilename, JSON.stringify({g: groupAST}, null, 4));
     }
 
-    // xxx generate
     group = st.loadGroup(groupGenSTG);
     writer = aiw.makeWriter();
 
@@ -282,8 +281,6 @@ function generateBootstrap(baseDir, options, callback) {
         astFilename = path.join(baseDir, groupAST.g.fileName + "_stg_ast.json");
         writeFile(astFilename, JSON.stringify(groupAST, null, 4));
     }
-
-    // xxx generate
 
     filename = path.join(baseDir, groupAST.g.fileName + "_stg.js"); // xxx _stg vs _st?
 
