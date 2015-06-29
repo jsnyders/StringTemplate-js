@@ -133,7 +133,7 @@ w.write("\n");$! todo track position in current line for tracing? !$
 >>
 
 templateIF(e) ::= <<
-if ($({expr$e.condition.type$})(e.condition)$) {
+if (st.test($({expr$e.condition.type$})(e.condition)$)) {
     $e.template:templateElement()$
 $if(e.elseifPart)$
 $e.elseifPart:elseifPart();separator="\n"$
@@ -151,15 +151,15 @@ elseifPart(eib) ::= <<
 >>
 
 exprOR(a) ::= <%
-$({expr$a.left.type$})(a.left)$ || $({expr$a.right.type$})(a.right)$
+st.test($({expr$a.left.type$})(a.left)$) || st.test($({expr$a.right.type$})(a.right)$)
 %>
 
 exprAND(a) ::= <%
-$({expr$a.left.type$})(a.left)$ && $({expr$a.right.type$})(a.right)$
+st.test($({expr$a.left.type$})(a.left)$) && st.test($({expr$a.right.type$})(a.right)$)
 %>
 
 exprNOT(a) ::= <%
-! $({expr$a.value.type$})(a.value)$
+! st.test($({expr$a.value.type$})(a.value)$)
 %>
 
 exprFUNCTION(a) ::= <%
@@ -170,10 +170,19 @@ exprATTRIBUTE(a) ::= <%
 s.$a.name$
 %>
 
-// st.prop(st.prop(a, "foo"), "xxx")
-// xxx for now assume just one property reference 
+// a.foo.bar
+// becomes:
+// st.prop(st.prop(a, "foo"), "bar")
 exprMEMBER_EXPR(a) ::= <%
-st.prop(s, g, rc, $({expr$a.object.type$})(a.object)$, $property(first(a.properties))$)
+$memberRef(({expr$a.object.type$})(a.object), a.properties)$
+%>
+
+memberRef(o, p) ::= <%
+$if(trunc(p))$
+st.prop(s, g, rc, $memberRef(o, trunc(p))$, $property(last(a.properties))$)
+$else$
+st.prop(s, g, rc, $o$, $property(first(a.properties))$)
+$endif$
 %>
 
 property(p) ::= <%

@@ -40,7 +40,8 @@ var fs = require("fs"),
     util = require("../lib/util.js"),
     st = require("../lib/stRuntime"),
     aiw = require("../lib/autoIndentWriter"),
-    groupGenSTG = require("./groupGen_stg");
+    groupGenSTG = require("./groupGen_stg"),
+    jsAttrRenderer = require("../lib/javaScriptAttributeRenderer");
 
 var VERSION = "0.1.0";
 
@@ -121,8 +122,8 @@ function compileGroupFile(file, options, callback) {
         callback(Error("Failed to compile '" + file + "'"));
     }
     // xxx
-    generateBootstrap(baseDir, parseOptions, callback);
-    //generate(baseDir, parseOptions, callback);
+    // generateBootstrap(baseDir, parseOptions, callback);
+    generate(baseDir, parseOptions, callback);
 }
 
 function parseDir(rootDir, options) {
@@ -258,6 +259,7 @@ function generate(baseDir, options, callback) {
     }
 
     group = st.loadGroup(groupGenSTG);
+    group.registerAttributeRenderer("string", jsAttrRenderer);
     writer = aiw.makeWriter();
 
     t = group.getTemplate("/compiledGroup");

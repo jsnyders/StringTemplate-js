@@ -30,7 +30,6 @@
  * This is the grammar for StringTemplate including group files, template files, and raw templates
  * current command to compile this is:
  *    pegjs --allowed-start-rules groupFile,templateFile,templateFileRaw,templateAndEOF stGrammar.pegjs
-
  */
 
 {
@@ -132,12 +131,21 @@ groupFile
             return curGroup;
         }
 
+/*
+ * Match:
+ *   import "<filename>"
+ */
 import
     = __ "import" __ file:STRING __ {
             curGroup.addImports(file.value);
             return null;
         }
 
+/*
+ * Match:
+ *   delimiters "<char>", "<char>"
+ * <char> must be a valid delimiter.
+ */
 delimiters
     = "delimiters" __ s:STRING __ "," __ e:STRING {
             var start = s.value,
@@ -154,19 +162,23 @@ delimiters
             return null;
         }
 
+/*
+ * Match a dictionary or template definition
+ */
 def
     = __ dictDef __ { return null; }
     / __ templateDef __ { return null; }
 
 /*
  * Template and region definitions and template aliases
- *  name(args) ::= << template body >> // multi-line template
- *  name(args) ::= <% template body %> // multi-line template new lines not significant
- *  name(args) ::= "template body" // single line template
- *  aliasName ::= templateName
- *  @enclosingTemplate.regionName() ::= << template body >>
- *  @enclosingTemplate.regionName() ::= <% template body %>
- *  @enclosingTemplate.regionName() ::= " template body "
+ * Match:
+ *   <name>(<args>) ::= << <template-body> >>   // multi-line template
+ *   <name>(<args>) ::= <% <template-body> %>   // multi-line template new lines not significant
+ *   <name>(<args>) ::= "<template-body>"       // single line template
+ *   <aliasName> ::= <templateName>
+ *   @<enclosingTemplate>.<regionName>() ::= << <template-body> >>
+ *   @<enclosingTemplate>.<regionName>() ::= <% <template-body> %>
+ *   @<enclosingTemplate>.<regionName>() ::= " <template-body> "
  */
 templateDef
     = def:( "@" enclosing:ID "." n:ID "(" __ ")" {
@@ -283,8 +295,8 @@ keyValue
 
 /* 
  * Anonymous template
- *
- * {template_text}
+ * Match:
+ *   {<template-body>}
  */
 anonymousTemplate
     = "{" &{subtemplateDepth += 1; return true;} 
@@ -362,7 +374,9 @@ template
             };
         }
 
-
+/*
+ * Match any of the elements of an expression
+ */
 element
     = &{return column() === 1;} INDENT? ST_COMMENT NEWLINE { return null; }  // a comment optionally preceded by indent
                                                                              // and immediately followed by a new line
@@ -427,9 +441,9 @@ region
 
 /* 
  * Anonymous sub template
- *
- * {args|template_text}
- * {template_text}
+ * Match:
+ *   {<args>|<template-body>}
+ *   {<template-body>}
  *
  * ignore final INDENT before } as it's not part of outer indent
  */
@@ -585,7 +599,7 @@ mapExpr
 */
 
 /*
- *
+ * xxx
  */
 mapExpr
     = m1:memberExpr zip:( mn:( __ "," __ m:memberExpr { return m; } )+ __ ":" __ tr:mapTemplateRef { return [ mn, tr ]; } )?
@@ -620,6 +634,7 @@ mapExpr
             }
 
 /*
+ * Match:
  * expr:template(args)  apply template to expr
  * expr:{arg | ...}     apply subtemplate to expr
  * expr:(e)(args)       convert e to a string template name and apply to expr
@@ -636,11 +651,13 @@ mapTemplateRef
     / '(' mapExpr ')' '(' argExprList? ')' // xxx -> ^(INCLUDE_IND mapExpr argExprList?)
 
 /*
- * <attribute.property> // value of property of object attribute
- * <attribute.property.property> // any number of levels of property references
- * <attribute.(expr)> // indirect property reference. value of expr is name of property of object attribute
- * <attribute.(expr).(expr)> // any number of levels allowed
- * <attribute.property.(expr). // can mix direct and indirect property references
+ * Match:
+ *   <attribute>.<property>             // value of property of object attribute
+ *   <attribute>.<property>.<property>  // any number of levels of property references
+ *   <attribute>.(<expr>)               // indirect property reference. value of expr is name of property of object attribute
+ *   <attribute>.(<expr>).(<expr>)      // any number of levels allowed
+ *   <attribute>.<property>.(<expr>).   // can mix direct and indirect property references
+ *
  * xxx it seems strange that member references are allowed on anything other than an attribute
  *  what does true.myProp mean?
  *  or template(arg1, arg2).prop2
@@ -671,12 +688,13 @@ memberExpr
                 }
             }
 /*
- * <func(expr)> // func is one of the built in functions: first, length, strlen, last, rest, reverse, trunc, strip, trim
- * xxx super?
- * <template(exp1, exp2...)>
- * <template(formalArg1=exp1, formalArg2=exp2...)>
+ * Handle template includes as well as functions because the syntax is the same 
+ * Match:
+ *   <func>(<expr>)     // func is one of the built in functions: first, length, strlen, last, rest, reverse, trunc, strip, trim
+ * super.<template-name>(<args>)
+ * <template-name>(<args>)
  * xxx
- * Or primary
+ *   Or primary
  */
 includeExpr
     = i:ID &{ return curGroup.isFunction(i.value); } __ '(' __ e:expr? __ ')' {
@@ -708,17 +726,18 @@ includeExpr
     / primary
 
 /*
- * true
- * false
- * <attribute>
- * "string"
- * {sub template}
- * [ expr, expr, ... ]
+ * Match:
+ *   true
+ *   false
+ *   <attribute>
+ *   <string>
+ *   <sub-template>
+ *   <list>
  * if currently parsing a condition
- *    ( conditional )
+ *   ( <conditional> )
  * else
- *    (expr)
- *    (expr)(args...)
+ *   (<expr>)
+ *   (<expr>)(<args>)
  */
 primary
     = TRUE
@@ -789,6 +808,10 @@ namedArg
             return v;
         }
 
+/*
+ * Match:
+ *  [ <expr>* ]
+ */
 list
     = "[" __ first:listElement? rest:( __ "," __ i:listElement { return i; } )* __ "]" {
             return {
