@@ -122,7 +122,7 @@ function compileGroupFile(file, options, callback) {
         callback(Error("Failed to compile '" + file + "'"));
     }
     // xxx
-    // generateBootstrap(baseDir, parseOptions, callback);
+    //generateBootstrap(baseDir, parseOptions, callback);
     generate(baseDir, parseOptions, callback);
 }
 

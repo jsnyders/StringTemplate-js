@@ -8,7 +8,10 @@ syntax. This means that the same template processed with the same data should pr
 output when processed with the Java (reference implementation) and this JavaScript implementation.
 See below for known differences. The API will **not** be compatible with the Java implementation.  
 
-## Update 17-Jun
+## Update 29-Jun
+
+Major milestone. StringTemplate-js now uses itself to generate compiled templates.
+It was able to pass all unit tests without using the Java version of StringTemplate for code generation! 
 
 What works at least a little
 
