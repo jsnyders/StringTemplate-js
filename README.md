@@ -113,3 +113,9 @@ OS new line. A lone cr may be unlikely. One way to get one is with $"\r"$.
 This implementation restricts the delimiters to "#$%^&*<>"
 
 * The JavaScript implementation doesn't support the old v3 style group file header
+
+* The order in which object properties (or map/dictionary keys) are iterated over may be different. 
+For example $obj:T()$  when obj is { "a": "foo", "b": "bar"} could call template T 
+with ["a", "b"] or ["b", "a"]. The JavaScript implementation will iterate over object
+properties in the order returned by Object.keys(obj);
+

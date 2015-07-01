@@ -351,4 +351,41 @@ describe("Template", function() {
         });
     });
 
+    describe("addimplicit", function() {
+        it("should set the first parameter", function() {
+            var t = new Template({}, group, render);
+
+            t.addImplicit("foobar");
+            assert.strictEqual(t.scope.arg1, "foobar", "got value added");
+            assert.strictEqual(t.scope.arg2, undefined, "got value added");
+        });
+
+        it("should set the it parameter for raw templates", function() {
+            var r2 = function() {};
+            r2.args = []; // 
+            var t = new Template({}, group, r2);
+
+            t.addImplicit("foobar");
+            assert.strictEqual(t.scope.it, "foobar", "got value added");
+        });
+    });
+
+    describe("clone", function() {
+        it("should create a new template just like the original", function() {
+            var tClone,
+                parentScope = { foo: "base1", bar:"base2"},
+                t = new Template(Object.create(parentScope), group, render);
+
+            t._hasParentScope = true;
+            tClone = t.clone();
+            assert.strictEqual(t.owningGroup, tClone.owningGroup, "has same owningGroup");
+            assert.strictEqual(t.render, tClone.render, "has same render function");
+            assert.strictEqual(t.isAnonSubtemplate, tClone.isAnonSubtemplate, "has same isAnonSubtemplate");
+            assert.strictEqual(t._hasParentScope, true, "original has parent scope");
+            assert.strictEqual(tClone._hasParentScope, undefined, "clone does not have parent scope");
+            assert.strictEqual(t.scope.foo, "base1", "original has parent scope");
+            assert.strictEqual(tClone.scope.foo, undefined, "clone does not have parent scope");
+        });
+    });
+
 });

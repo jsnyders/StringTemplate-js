@@ -196,6 +196,11 @@ Test Map Rot:
 $board:{x||$x$|},{x|$x$|},{x|$x$|$\n$+-+-+-+$\n$}$
 >>
 
+testMapKeys(obj) ::= <<
+$obj:{k | value for $k$ is $obj.(k)$
+}$
+>>
+
 testPropIndirect(names, propName) ::= <<
 $names:testPropIndirectRefSub(propName);separator="\n"$
 >>
@@ -214,3 +219,9 @@ $(getIncludeName())("A", "B")$
 >>
 
 getIncludeName() ::= <%sub%>
+
+testNestedPropRef(deep) ::= <<
+$deep.level1.things.stuff$
+$deep.level1.things.({junk})$
+>>
+

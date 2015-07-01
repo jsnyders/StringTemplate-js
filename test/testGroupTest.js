@@ -269,4 +269,23 @@ describe("test group test", function() {
 
     });
 
+    it("should generate same output as reference implementation for template testNestedPropRef", function(done) {
+        var t,
+            attrs = {"deep": { "level1": { "things": {"stuff": "gold", "junk": "lemon" }}}},
+            group = st.loadGroup(testTemplateGroup),
+            writer = w.makeWriter();
+
+        getSTReferenceOutput("testGroup", "testNestedPropRef", attrs, function(refOutput, errors) {
+            t = group.getTemplate("/testNestedPropRef");
+            assert.notStrictEqual(t, null, "found a template");
+            // there are no arguments
+
+            t.setArgs(attrs);
+            t.write(writer);
+            assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
+            done();
+        });
+
+    });
+
 });

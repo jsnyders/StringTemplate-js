@@ -179,7 +179,7 @@ $memberRef(({expr$a.object.type$})(a.object), a.properties)$
 
 memberRef(o, p) ::= <%
 $if(trunc(p))$
-st.prop(s, g, rc, $memberRef(o, trunc(p))$, $property(last(a.properties))$)
+st.prop(s, g, rc, $memberRef(o, trunc(p))$, $property(last(p))$)
 $else$
 st.prop(s, g, rc, $o$, $property(first(a.properties))$)
 $endif$
