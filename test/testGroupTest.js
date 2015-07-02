@@ -136,7 +136,6 @@ describe("test group test", function() {
                 "first": "Sam",
                 "last": "Smith"
             }});
-            console.log("xxx ref output: " + refOutput);
             t.write(writer);
             assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
 
@@ -155,9 +154,7 @@ describe("test group test", function() {
                     "first": "Sam",
                     "last": "Smith"
                 }});
-                console.log("xxx ref output: " + refOutput);
                 t.write(writer);
-                console.log("xxx writer output: " + writer.toString());
                 assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
                 done();
             });

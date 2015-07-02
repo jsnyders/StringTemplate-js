@@ -343,4 +343,30 @@ describe("stGroup", function() {
         });
     });
 
+    describe("simple render method", function() {
+        it("should return the correct output", function() {
+            var output, rfn,
+                g = st.loadGroup(emptyGroup),
+                w = {
+                    text: "",
+                    write: function(str) {
+                        this.text += str;
+                    },
+                    toString: function() {
+                        return this.text;
+                    }
+                };
+            rfn = function(w, rc) {
+                w.write("this is the template output");
+            };
+            rfn.args = [];
+            g.addTemplate("/test", rfn);
+            output = g.render("test", [], w);
+            assert.strictEqual(output, "this is the template output", "got correct rendered output");
+            // xxx test with args and for raw template
+        });
+    });
+
+    // xxx test reportRuntimeError
+    
 });

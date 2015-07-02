@@ -8,7 +8,7 @@ syntax. This means that the same template processed with the same data should pr
 output when processed with the Java (reference implementation) and this JavaScript implementation.
 See below for known differences. The API will **not** be compatible with the Java implementation.  
 
-## Update 29-Jun
+## Update 1-Jul
 
 Major milestone. StringTemplate-js now uses itself to generate compiled templates.
 It was able to pass all unit tests without using the Java version of StringTemplate for code generation! 
@@ -42,12 +42,22 @@ What doesn't work or isn't tested
 * zipping multiple lists/arrays while mapping
 * regions
 
+## License
+BSD
+
 ## Install
 
 TBD for now download or fork the project
 use npm link to add stc as a global command or you can give the path to stc in the bin folder
 
 ## Using
+
+The file samples/hello/hello.st contains (with comments removed):
+
+```
+hello(audience) ::= <<Hello $audience;null="is anyone there?"$!
+>>
+```
 
 * Step 1 compile the templates using the stc command. For example:
 
@@ -59,10 +69,6 @@ stc hello.st
 This produces `hello_stg.js` in the same folder. Type `stc -h` for help on stc command line options.
 
 Templates can also be compiled from your own application using the API in compiler/stc.js. Grunt task TBD.
-
-NOTE: Currently the Java [stst](https://github.com/jsnyders/STSTv4) program is needed to bootstrap compiling because
-StringTemplate is used to generate the compiled template JavaScript code. Make sure you have the latest stst installed
-so that it runs with the command `stst`. Ignore the runtime errors output by stst.
  
 * Step 2 Execute the compiled template. This can be done with the JavaScript version of stst that is in the bin folder.
 
@@ -76,27 +82,21 @@ the data for the template.
 
 NOTE: The JavaScript version of stst is very rough. Ignore the debugging output for now.
 
-To execute the template from your application TBD the following code is a little out of date. Take a look at the unit tests.
+To execute the template from your application:
 
 ```
+cd samples/hello
 node
-var t, st = require("./lib/stRuntime"),
-    w = require("./lib/autoIndentWriter"),
-    inc_stg = require("./test/include_stg"),
-    group = st.loadGroup(inc_stg),
-    writer = w.makeWriter();
-t = group.getTemplate("/main");
-t.add("arg1", {
-    first: "Max",
-    last: "Smith"
-});
-t.write(writer);
-console.log(writer.toString());
+var st = require("../../lib/stRuntime");
+var g = st.loadGroup(require("./hello_stg"));
+console.log(g.render("hello", ["world"]);
+// or
+console.log(g.render("hello", {audience:"world"});
 ```
 
+## API
+tbd
 
-## License
-BSD
 
 ## Building
 
