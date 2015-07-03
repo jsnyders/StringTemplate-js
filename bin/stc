@@ -5,7 +5,7 @@
 var fs = require("fs"),
     path = require("path"),
     stc = require("../compiler/stc"),
-    stGroup = require("../lib/stGroup");
+    group = require("../compiler/group");
 
 //
 // Command line parsing
@@ -27,7 +27,7 @@ var argv = require('yargs')
     })
     .option("delimiters", {
         alias: "s",
-        default: stGroup.DEFAULT_START_DELIMITER + stGroup.DEFAULT_STOP_DELIMITER,
+        default: group.DEFAULT_START_DELIMITER + group.DEFAULT_STOP_DELIMITER,
         type: "string",
         describe: "Start and stop characters that delimit template expressions."
     })
@@ -124,9 +124,9 @@ if (stat.isDirectory()) {
         console.log("Warning: raw option ignored when compiling a single file."); // xxx why would that be?
     }
     ext = path.extname(inputPath);
-    if (ext === stGroup.GROUP_FILE_EXTENSION) {
+    if (ext === group.GROUP_FILE_EXTENSION) {
         stc.compileGroupFile(inputPath, options, callback);
-    } else if (ext === stGroup.TEMPLATE_FILE_EXTENSION) {
+    } else if (ext === group.TEMPLATE_FILE_EXTENSION) {
         // xxx 
         stc.compileGroupFile(inputPath, options, callback);
     }

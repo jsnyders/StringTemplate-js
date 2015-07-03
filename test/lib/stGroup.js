@@ -21,8 +21,6 @@ describe("stGroup", function() {
             assert.deepEqual(g.templates, {}, "no templates");
             assert.deepEqual(g.renderers, {}, "no renderers");
             assert.strictEqual(typeof g.modelAdaptors.Dictionary, "function", "has default dictionary adaptor");
-            assert.strictEqual(g.TEMPLATE_FILE_EXTENSION, ".st");
-            assert.strictEqual(g.GROUP_FILE_EXTENSION, ".stg");
         });
     });
 

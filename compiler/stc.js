@@ -35,8 +35,8 @@
 var fs = require("fs"),
     path = require("path"),
     parser = require("./stGrammar.js"),
-    makeGroup = require("./group.js").makeGroup,
-    stGroup = require("../lib/stGroup.js"),
+    group = require("./group.js"),
+    makeGroup = group.makeGroup,
     util = require("../lib/util.js"),
     st = require("../lib/stRuntime"),
     aiw = require("../lib/autoIndentWriter"),
@@ -50,8 +50,8 @@ var defaultOptions = {
     encoding: "utf8",
     outputAST: false,
     minify: false,
-    delimiterStartChar: stGroup.DEFAULT_START_DELIMITER,
-    delimiterStopChar: stGroup.DEFAULT_STOP_DELIMITER
+    delimiterStartChar: group.DEFAULT_START_DELIMITER,
+    delimiterStopChar: group.DEFAULT_STOP_DELIMITER
 };
 
 function logError(file, ex) {
@@ -67,7 +67,7 @@ function logError(file, ex) {
 }
 
 function startRule(ext, raw) {
-    if (ext === stGroup.GROUP_FILE_EXTENSION) {
+    if (ext === group.GROUP_FILE_EXTENSION) {
         return "groupFile";
     } else if (raw) {
         return "templateFileRaw";
@@ -90,8 +90,8 @@ function getFileReader(baseDir, encoding) {
  * 
  * @param file {string} group file to compile
  * @param options object to control compilation with these optional properties;
- *   delimiterStartChar: {string} single character string. Default is stGroup.DEFAULT_START_DELIMITER.
- *   delimiterStopChar: {string} single character string. Default is stGroup.DEFAULT_STOP_DELIMITER.
+ *   delimiterStartChar: {string} single character string. Default is group.DEFAULT_START_DELIMITER.
+ *   delimiterStopChar: {string} single character string. Default is group.DEFAULT_STOP_DELIMITER.
  *   encoding: {string} encoding for input and output files. Default is "utf8".
  *   verbose: {boolean} if true write additional information to stdout. Default is false.
  *   outputAST: {boolean} if true output the AST that results from parsing the group file
@@ -127,7 +127,7 @@ function compileGroupFile(file, options, callback) {
 }
 
 function parseDir(rootDir, options) {
-    var group,
+    var curGroup,
         errorCount = 0;
 
     function processDir(relDir, dir) {
@@ -152,16 +152,16 @@ function parseDir(rootDir, options) {
                     console.log("Processing group sub folder '" + relFile + "'...");
                 }
                 processDir(relFile, filePath);
-            } else if (ext === stGroup.TEMPLATE_FILE_EXTENSION || ext === stGroup.GROUP_FILE_EXTENSION) {
+            } else if (ext === group.TEMPLATE_FILE_EXTENSION || ext === group.GROUP_FILE_EXTENSION) {
                 if (options.verbose) {
                     console.log("Processing file '" + relFile + "'...");
                 }
 
                 try {
                     text = options.readFile(relFile);
-                    group.groupFolder = relDir;
-                    group.fileName = path.basename(file, ext);
-                    options.startRule = startRule(ext, group.raw);
+                    curGroup.groupFolder = relDir;
+                    curGroup.fileName = path.basename(file, ext);
+                    options.startRule = startRule(ext, curGroup.raw);
                     parser.parse(text, options);
                 } catch (ex) {
                     logError(relFile, ex);
@@ -174,7 +174,7 @@ function parseDir(rootDir, options) {
     if (options.verbose) {
         console.log("Processing group folder '" + rootDir + "'...");
     }
-    group = options.group;
+    curGroup = options.group;
     processDir("", rootDir);
     return errorCount;
 }
@@ -206,8 +206,8 @@ function compileDir(dir, options, callback, raw) {
  *
  * @param dir {string} directory full of template or group files to compile to a single group
  * @param options object to control compilation with these optional properties;
- *   delimiterStartChar: {string} single character string. Default is stGroup.DEFAULT_START_DELIMITER.
- *   delimiterStopChar: {string} single character string. Default is stGroup.DEFAULT_STOP_DELIMITER.
+ *   delimiterStartChar: {string} single character string. Default is group.DEFAULT_START_DELIMITER.
+ *   delimiterStopChar: {string} single character string. Default is group.DEFAULT_STOP_DELIMITER.
  *   encoding: {string} encoding for input and output files. Default is "utf8".
  *   verbose: {boolean} if true write additional information to stdout. Default is false.
  *   outputAST: {boolean} if true output the AST that results from parsing the group file
@@ -225,8 +225,8 @@ function compileGroupDir(dir, options, callback) {
  *
  * @param dir {string} directory full of template or group files to compile to a single group
  * @param options object to control compilation with these optional properties;
- *   delimiterStartChar: {string} single character string. Default is stGroup.DEFAULT_START_DELIMITER.
- *   delimiterStopChar: {string} single character string. Default is stGroup.DEFAULT_STOP_DELIMITER.
+ *   delimiterStartChar: {string} single character string. Default is group.DEFAULT_START_DELIMITER.
+ *   delimiterStopChar: {string} single character string. Default is group.DEFAULT_STOP_DELIMITER.
  *   encoding: {string} encoding for input and output files. Default is "utf8".
  *   verbose: {boolean} if true write additional information to stdout. Default is false.
  *   outputAST: {boolean} if true output the AST that results from parsing the group file
@@ -247,7 +247,7 @@ function writeFile(filePath, text) {
 }
 
 function generate(baseDir, options, callback) {
-    var astFilename, filename, group, writer, t,
+    var astFilename, filename, g, writer, t,
         groupAST = options.group;
 
     // xxx any pre processing of parsing output needed?
@@ -258,11 +258,11 @@ function generate(baseDir, options, callback) {
         writeFile(astFilename, JSON.stringify({g: groupAST}, null, 4));
     }
 
-    group = st.loadGroup(groupGenSTG);
-    group.registerAttributeRenderer("string", jsAttrRenderer);
+    g = st.loadGroup(groupGenSTG);
+    g.registerAttributeRenderer("string", jsAttrRenderer);
     writer = aiw.makeWriter();
 
-    t = group.getTemplate("/compiledGroup");
+    t = g.getTemplate("/compiledGroup");
     t.setArgs({g: groupAST});
     t.write(writer);
     filename = path.join(baseDir, groupAST.fileName + "_stg.js"); // xxx _stg vs _st?

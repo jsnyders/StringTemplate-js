@@ -39,7 +39,6 @@ describe("stRuntime", function() {
             var st = getST();
             var g = st.loadImport(path.dirname(path.dirname(module.filename)), "testGroup.stg");
             // test to see if it looks like a group
-            assert.strictEqual(g.TEMPLATE_FILE_EXTENSION, ".st", "has file extension constant");
             assert.strictEqual(typeof g.getTemplate, "function", "has getTemplate function");
         });
     });

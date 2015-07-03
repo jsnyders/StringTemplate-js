@@ -27,12 +27,12 @@
  */
 /*
  * group.js
- * xxx
+ * Context information used during compiling templates to a group JavaScript file.
  */
 "use strict";
 
-// These are the built-in functions supported by the runtime. 
-// xxx it may be possible to extend this set at runtime so it would require a way to add to this list during compiling
+// These are the built-in functions supported by the runtime.
+// todo THINK it may be possible to extend this set at runtime so it would require a way to add to this list during compiling
 var functions = ["first", "length", "strlen", "last", "rest", "reverse", "trunc", "strip", "trim"],
     fnMap = {};
 functions.forEach(function(fn) { fnMap[fn] = true; });
@@ -88,6 +88,10 @@ var groupPrototype = {
 };
 
 module.exports = {
+    TEMPLATE_FILE_EXTENSION: ".st",
+    GROUP_FILE_EXTENSION: ".stg",
+    DEFAULT_START_DELIMITER: "$",
+    DEFAULT_STOP_DELIMITER: "$",
     makeGroup: function(groupFolder, fileName, raw) {
         var that = Object.create(groupPrototype);
         that.groupFolder = groupFolder;
