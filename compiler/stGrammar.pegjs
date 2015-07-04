@@ -44,7 +44,8 @@
         inConditional = false,
         verbose = false,
         ignoreNewLines = options.ignoreNewLines || false,
-        formalArgsHasOptional = false;
+        formalArgsHasOptional = false,
+        lineOffset = options.lineOffset || 0;
 
     var logger = function(message) {
         console.log(message);
@@ -54,6 +55,13 @@
         if (verbose) {
             logger(message);
         }
+    }
+
+    function getLocation() {
+        return {
+            line: line() + lineOffset,
+            column: column()
+        };
     }
 
     function makeList(first, rest) {
@@ -91,6 +99,7 @@
                 group: curGroup,
                 nested: true,
                 verbose: verbose,
+                lineOffset: lineOffset,
                 ignoreNewLines: ignoreNewLines,
                 delimiterStartChar: delimiterStartChar,
                 delimiterStopChar: delimiterStopChar
@@ -243,7 +252,8 @@ formalArg
                 }
                 ret = {
                     type: "FORMAL_ARG",
-                    name: name.value,
+                    loc: getLocation(),
+                    name: name.value
                 };
                 if (defaultValue) {
                     ret.defaultValue = defaultValue;
@@ -276,12 +286,14 @@ keyValue
     = v:BIGSTRING {
             return {
                 type: "ANON_TEMPLATE",
+                loc: getLocation(),
                 value: parseTemplate(v.value).value
             };
         }
     / v:BIGSTRING_NO_NL {
             return {
                 type: "ANON_TEMPLATE",
+                loc: getLocation(),
                 value: parseTemplate(v.value).value
             };
         }
@@ -289,7 +301,7 @@ keyValue
     / anonymousTemplate 
     / TRUE
     / FALSE
-    / "key" { return { type: "DICT_KEY_VALUE", value: null }; }
+    / "key" { return { type: "DICT_KEY_VALUE", loc: getLocation(), value: null }; }
     / EMPTY_LIST
 
 
@@ -304,6 +316,7 @@ anonymousTemplate
             subtemplateDepth -= 1; // xxx is this subtemplate depth stuff needed?
             return {
                 type: "ANON_TEMPLATE",
+                loc: getLocation(),
                 value: t.value
             };
         }
@@ -387,6 +400,7 @@ element
             } else {
                 return {
                     type: "INDENTED_EXPR",
+                    loc: getLocation(),
                     indent: i.value,
                     value: se
                 };
@@ -420,6 +434,7 @@ exprTag
 	= START __ e:expr opts:( ';' o:exprOptions { return o; } )? __ STOP {
 	        var ret = {
 	            type: "EXPR",
+                loc: getLocation(),
 	            expr: e
 	        };
 	        if (opts) {
@@ -454,6 +469,7 @@ subtemplate
             outside = false;
             return {
                 type: "SUBTEMPLATE",
+                loc: getLocation(),
                 args: args,
                 template: t.value
             };
@@ -463,10 +479,11 @@ formalArgsNoDefault
     = first:ID 
             rest:( __ "," __ a:ID { return {
                                             type: "FORMAL_ARG",
+                                            loc: getLocation(),
                                             name: a.value
                                         };
                                     })* {
-            return makeList({type: "FORMAL_ARG", name: first.value}, rest);
+            return makeList({type: "FORMAL_ARG", loc: getLocation(), name: first.value}, rest);
         }
 
 ifstat
@@ -480,6 +497,7 @@ ifstat
                     __ ")" STOP t:template {
                 return {
                     type: "ELSEIF",
+                    loc: getLocation(),
                     condition: c,
                     template: t.value
                 };
@@ -488,12 +506,14 @@ ifstat
             INDENT? START "else" STOP t:template {
                 return {
                     type: "ELSE",
+                    loc: getLocation(),
                     template: t.value
                 };
             })?
         INDENT? START "endif" STOP {
                 return {
                     type: "IF",
+                    loc: getLocation(),
                     condition: c,
                     template: t.value,
                     elseifPart: ei,
@@ -510,6 +530,7 @@ conditional
     = l:andConditional __ "||" __ r:conditional {
             return {
                 type: "OR",
+                loc: getLocation(), 
                 left: l,
                 right: r
             };
@@ -520,6 +541,7 @@ andConditional
     = l:notConditional __ "&&" __ r:andConditional {
             return {
                 type: "AND",
+                loc: getLocation(), 
                 left: l,
                 right: r
             };
@@ -530,6 +552,7 @@ notConditional
     = "!" __ n:notConditional {
             return { 
                 type: "NOT",
+                loc: getLocation(), 
                 value: n
             };
         }
@@ -564,6 +587,7 @@ exprNoComma
             if (ref) {
                 return {
                     type: "MAP",
+                    loc: getLocation(),
                     expr: me,
                     using: ref
                 };
@@ -583,6 +607,7 @@ mapExpr
     = first:memberExpr ( ("," rest:memberExpr)+ ":" mapTemplateRef {
                     return {
                         type: "ZIP",
+                        loc: getLocation(),
                         value: "xxx" // ^(ELEMENTS memberExpr+) mapTemplateRef
                     }
             })
@@ -608,6 +633,7 @@ mapExpr
                 if (zip) {
                     res = {
                         type: "ZIP",
+                        loc: getLocation(),
                         expr: makeList(m1, zip[0]),
                         using: zip[1]
                     };
@@ -615,6 +641,7 @@ mapExpr
                 if (maps.length > 0) {
                     res = {
                         type: "MAP",
+                        loc: getLocation(),
                         expr: res,
                         using: maps
                     };
@@ -624,8 +651,9 @@ mapExpr
                         expr = maps[0][i];
                         if (expr.type === "INCLUDE") {
                             expr.args.splice(0, 0, {
-                                                   "type": "STRING",
-                                                   "value": ""
+                                                   type: "STRING",
+                                                   loc: getLocation(),
+                                                   value: ""
                                                });
                         }
                     }
@@ -643,6 +671,7 @@ mapTemplateRef
     = i:ID '(' a:args ')' {
             return {
                 type: "INCLUDE",
+                loc: getLocation(),
                 templateName: i.value,
                 args: a.value,
             };
@@ -667,12 +696,14 @@ memberExpr
         props:( '.' prop:ID {
                 return {
                     type: "PROP",
+                    loc: getLocation(),
                     property: prop.value
                 };
             }
         / '.' '(' e:mapExpr ')' {
                 return {
                     type: "PROP_IND",
+                    loc: getLocation(),
                     property: e
                 };
             }
@@ -680,6 +711,7 @@ memberExpr
                 if (props.length > 0) {
                     return {
                         type: "MEMBER_EXPR",
+                        loc: getLocation(),
                         object: e,
                         properties: props  // xxx is this being an array a problem?
                     };
@@ -700,6 +732,7 @@ includeExpr
     = i:ID &{ return curGroup.isFunction(i.value); } __ '(' __ e:expr? __ ')' {
             return {
                 type: "FUNCTION",
+                loc: getLocation(),
                 name: i.value,
                 arg: e
             };
@@ -707,6 +740,7 @@ includeExpr
     / "super." i:ID '(' a:args ')' { // xxx todo region stuff
             return {
                 type: "INCLUDE_SUPER",
+                loc: getLocation(),
                 name: i.value,
                 args: a
             };
@@ -714,6 +748,7 @@ includeExpr
     / i:ID '(' a:args ')' {
              return {
                  type: "INCLUDE",
+                 loc: getLocation(),
                  templateName: i.value,
                  args: a.value,
                  argsNamed: !!a.named,
@@ -744,6 +779,7 @@ primary
     / FALSE
     / i:ID { return {
                 type: "ATTRIBUTE",
+                loc: getLocation(),
                 name: i.value
             };
         }
@@ -755,12 +791,14 @@ primary
             if (a) {
                 return {
                     type: "INCLUDE_IND",
+                    loc: getLocation(),
                     expr: e,
                     args: a.value
                 };
             } else {
                 return {
                     type: "TO_STR",
+                    loc: getLocation(),
                     expr:  e
                 };
             }
@@ -816,6 +854,7 @@ list
     = "[" __ first:listElement? rest:( __ "," __ i:listElement { return i; } )* __ "]" {
             return {
                 type: "LIST",
+                loc: getLocation(),
                 value: makeList(first, rest)
             };
         }
@@ -879,17 +918,17 @@ RESERVED
 // The functions need to be included as identifiers because they are tested to be functions later
 
 TRUE
-    = "true" { return { type: "BOOLEAN", value: true }; }
+    = "true" { return { type: "BOOLEAN", loc: getLocation(), value: true }; }
 
 FALSE
-    = "false" { return { type: "BOOLEAN", value: false }; }
+    = "false" { return { type: "BOOLEAN", loc: getLocation(), value: false }; }
 
 EMPTY_LIST
-    = '[' __ ']' { return { type: "EMPTY_LIST", value: null }; }
+    = '[' __ ']' { return { type: "EMPTY_LIST", loc: getLocation(), value: null }; }
 
 STRING "string"
     = '"' chars:STRING_CHAR* '"' {
-            return { type: "STRING", value: chars.join("") };
+            return { type: "STRING", loc: getLocation(), value: chars.join("") };
         }
 
 STRING_CHAR
@@ -977,6 +1016,7 @@ TEXT
     = &{return outside;} chars:TEXT_CHAR+ {
             return {
                 type: "TEXT",
+                loc: getLocation(),
                 value: chars.join("") // can't use text() unless it fixes up escapes
             };
         }
@@ -1019,6 +1059,7 @@ NEWLINE
     = &{return outside;} EOL {
             return {
                 type: "NEWLINE",
+                loc: getLocation(),
                 value: text()
             };
         }

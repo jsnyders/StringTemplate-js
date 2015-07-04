@@ -107,6 +107,7 @@ describe("stGrammar", function() {
                         map: {
                             val1: {
                                 type: "STRING",
+                                loc: { line: 1, column: 14 },
                                 value: "foo"
                             }
                         },
@@ -120,4 +121,5 @@ describe("stGrammar", function() {
         });
     });
 
+    // xxx many more tests needed
 });
