@@ -318,4 +318,21 @@ describe("stRuntime", function() {
         });
     });
 
+    describe("prop", function() {
+        it("should return the property of an object", function() {
+            var internal = getST();
+            var g = st.loadGroup(emptyGroup);
+            var p = internal.prop({}, g, {}, {a: "foo"}, "a");
+            console.log("xxx prop is " + p);
+            assert.strictEqual(p, "foo", "got correct property");
+        });
+
+        it("should report an error if the object has no such property", function() {
+            var internal = getST();
+            var g = st.loadGroup(emptyGroup);
+            var p = internal.prop({}, g, {}, {a: "foo"}, "b");
+            console.log("xxx prop is " + p);
+            assert.strictEqual(p, "foo", "got correct property");
+        });
+    });
 });
