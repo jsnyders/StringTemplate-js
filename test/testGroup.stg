@@ -225,3 +225,9 @@ $deep.level1.things.stuff$
 $deep.level1.things.({junk})$
 >>
 
+empty1() ::= <<
+>>
+
+empty2() ::= <%
+
+%>

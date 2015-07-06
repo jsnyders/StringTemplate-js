@@ -5,6 +5,7 @@
 var assert = require("assert"),
     path = require("path"),
     Dictionary = require("../../lib/Dictionary"),
+    errors = require("../../lib/errors"),
     st = require("../../lib/stRuntime");
 
 var emptyGroup = function(_, g) {
@@ -323,16 +324,34 @@ describe("stRuntime", function() {
             var internal = getST();
             var g = st.loadGroup(emptyGroup);
             var p = internal.prop({}, g, {}, {a: "foo"}, "a");
-            console.log("xxx prop is " + p);
             assert.strictEqual(p, "foo", "got correct property");
         });
 
         it("should report an error if the object has no such property", function() {
-            var internal = getST();
+            var error, 
+                internal = getST();
             var g = st.loadGroup(emptyGroup);
-            var p = internal.prop({}, g, {}, {a: "foo"}, "b");
-            console.log("xxx prop is " + p);
-            assert.strictEqual(p, "foo", "got correct property");
+            g.setErrorListener(function(rm) {
+                error = rm;
+            });
+            error = null;
+            var p = internal.prop({}, g, {}, {a: "foo"}, "bar");
+            assert.strictEqual(p, null, "got no property");
+            assert.strictEqual(error.type, errors.st.PROPERTY_NOT_FOUND, "error has correct type");
+            assert.ok(/bar/.test(error.message), "message contains name of property");
+            assert.strictEqual(error.file, undefined, "no loc info");
+            assert.strictEqual(error.line, undefined, "no loc info");
+            assert.strictEqual(error.column, undefined, "no loc info");
+
+            // again with location info
+            error = null;
+            p = internal.prop({}, g, {}, {a: "foo"}, "bar", {file: "x", line: 22, column: 33});
+            assert.strictEqual(p, null, "got no property");
+            assert.strictEqual(error.type, errors.st.PROPERTY_NOT_FOUND, "error has correct type");
+            assert.ok(/bar/.test(error.message), "message contains name of property");
+            assert.strictEqual(error.file, "x", "correct loc info");
+            assert.strictEqual(error.line, 22, "correct loc info");
+            assert.strictEqual(error.column, 33, "correct loc info");
         });
     });
 });

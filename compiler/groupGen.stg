@@ -40,6 +40,8 @@ var base = path.dirname(module.filename);
 function getInstance(st, group) {
     "use strict";
 var r;
+var gFile = "$g.fileName;format="string"$"; $!xxx want extension and possibly path or relative path!$
+
 group.name = "$g.fileName;format="string"$";
 
 $imports(g.imports)$
@@ -179,9 +181,9 @@ $memberRef(({expr$a.object.type$})(a.object), a.properties)$
 
 memberRef(o, p) ::= <%
 $if(trunc(p))$
-st.prop(s, g, rc, $memberRef(o, trunc(p))$, $property(last(p))$)
+st.prop(s, g, rc, $memberRef(o, trunc(p))$, $property(last(p))$$location(last(p).loc)$)
 $else$
-st.prop(s, g, rc, $o$, $property(first(a.properties))$)
+st.prop(s, g, rc, $o$, $property(first(p))$$location(last(p).loc)$)
 $endif$
 %>
 
@@ -292,3 +294,11 @@ $a : { k | $alias(k, a.(k))$ }$
 alias(a, t) ::= <<
 group.addTemplateAlias("$a$", "$t$");
 >>
+
+
+// xxx consider move this to a debug group
+location(l) ::= <%
+$if(l)$
+, { file: gFile, line: $l.line$, column: $l.column$ }
+$endif$
+%>

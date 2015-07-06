@@ -1,11 +1,40 @@
 #!/usr/bin/env node
+/*
+ [The "BSD licence"]
+ Copyright (c) 2015, John Snyders
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 1. Redistributions of source code must retain the above copyright
+ notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
+ 3. The name of the author may not be used to endorse or promote products
+ derived from this software without specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+// xxx consider rename this to st
 
 "use strict";
 
 var fs = require("fs"),
     path = require("path"),
     stc = require("../compiler/stc.js"),
-    stGroup = require("../lib/stGroup.js"),
+    cGroup = require("../compiler/group.js"),
     st = require("../lib/stRuntime"),
     w = require("../lib/autoIndentWriter");
 
@@ -35,8 +64,11 @@ function processTemplate(group, template, options, data) {
 
     t.write(writer);
 
-    console.log("xxx\n" + writer.toString());
-
+    // xxx write to file or stdout
+    if (options.verbose /*xxx and going to stdout*/) {
+        console.log("Template output:");
+    }
+    console.log(writer.toString());
 }
 
 
@@ -88,9 +120,9 @@ function compile(inputPath, xxx) {
             console.log("Warning: raw option ignored when compiling a single file."); // xxx why would that be?
         }
         ext = path.extname(inputPath);
-        if (ext === stGroup.GROUP_FILE_EXTENSION) {
+        if (ext === cGroup.GROUP_FILE_EXTENSION) {
             stc.compileGroupFile(inputPath, options, callback);
-        } else if (ext === stGroup.TEMPLATE_FILE_EXTENSION) {
+        } else if (ext === cGroup.TEMPLATE_FILE_EXTENSION) {
             // xxx 
             stc.compileGroupFile(inputPath, options, callback);
         }
@@ -129,7 +161,7 @@ var argv = require('yargs')
     })
     .option("delimiters", {
         alias: "s",
-        default: stGroup.DEFAULT_START_DELIMITER + stGroup.DEFAULT_STOP_DELIMITER,
+        default: cGroup.DEFAULT_START_DELIMITER + cGroup.DEFAULT_STOP_DELIMITER,
         type: "string",
         describe: "Start and stop characters that delimit template expressions. Only needed if compiling."
     })
@@ -143,7 +175,7 @@ var argv = require('yargs')
         alias: "verbose",
         default: false,
         type: "boolean",
-        describe: "Log output about what the compiler is doing"
+        describe: "Log output about runtime processing of the template"
     })
     .usage("Usage: $0 [options] [<group>.]<template> <data-file>")
     .wrap(78)
@@ -158,6 +190,8 @@ var argv = require('yargs')
         return true;
     })
     .argv;
+
+    // xxx option(s) to ignore various runtime errors or other control over where errors go
 
 if (argv.verbose) {
     // xxx version stc vs stst vs runtime vs compiler All one version?
@@ -201,7 +235,10 @@ if (i >= 0) {
     template = arg1;
     groupName = path.basename(baseDir);
 }
-console.log("xxx group " + groupName + ", template " + template);
+
+if (argv.verbose) {
+    console.log("Group name: " + groupName + ", Template: " + template);
+}
 
 // look for compiled group file
 groupFile = path.join(baseDir, groupName + "_stg.js");
