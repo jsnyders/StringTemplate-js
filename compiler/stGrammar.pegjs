@@ -91,6 +91,7 @@
             lineOffset += 1;
         }
         template = template.replace(/^\r?\n/, "") // remove a single leading new line if any
+        template = template.replace(/\r?\n$/, "") // remove a single trailing new line if any
 
         outside = true; // just in case, make sure always start parsing a template on the outside
         try {

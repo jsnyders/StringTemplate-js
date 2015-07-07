@@ -285,4 +285,20 @@ describe("test group test", function() {
 
     });
 
+    it("should generate same output as reference implementation for template testEmptyTemplates", function(done) {
+        var t,
+            group = st.loadGroup(testTemplateGroup),
+            writer = w.makeWriter();
+
+        getSTReferenceOutput("testGroup", "testEmptyTemplates", {}, function(refOutput, errors) {
+            t = group.getTemplate("/testEmptyTemplates");
+            assert.notStrictEqual(t, null, "found a template");
+            // there are no arguments
+
+            t.write(writer);
+            assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
+            done();
+        });
+    });
+
 });
