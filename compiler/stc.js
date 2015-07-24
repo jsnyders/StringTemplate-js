@@ -109,7 +109,7 @@ function compileGroupFile(file, options, callback) {
         baseDir = path.join(process.cwd(), baseDir);
         file = path.join(process.cwd(), file);
     }
-    parseOptions = util.copyProperties(options, defaultOptions);
+    parseOptions = util.copyProperties(options, util.copyProperties(defaultOptions, {}));
     parseOptions.startRule = startRule(ext, false);
     parseOptions.readFile = getFileReader(baseDir, parseOptions.encoding);
     parseOptions.group = makeGroup("", path.basename(file, ext));
@@ -188,7 +188,7 @@ function compileDir(dir, options, callback, raw) {
         dir = path.join(process.cwd(), dir);
     }
 
-    parseOptions = util.copyProperties(options, defaultOptions);
+    parseOptions = util.copyProperties(options, util.copyProperties(defaultOptions, {}));
     // start rule needs to be set per file
     parseOptions.readFile = getFileReader(dir, parseOptions.encoding);
     parseOptions.group = makeGroup("", "", raw);
@@ -253,6 +253,7 @@ function generate(baseDir, options, callback) {
     // xxx any pre processing of parsing output needed?
     groupAST.date = (new Date()).toString();
 
+    console.log("xxx output file: " + options.output);
     if (options.outputAST) {
         astFilename = path.join(baseDir, groupAST.fileName + "_stg_ast.json");
         writeFile(astFilename, JSON.stringify({g: groupAST}, null, 4));
