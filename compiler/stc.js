@@ -96,9 +96,14 @@ function getFileReader(baseDir, encoding) {
  *   verbose: {boolean} if true write additional information to stdout. Default is false.
  *   outputAST: {boolean} if true output the AST that results from parsing the group file
  *   minify: {boolean} if true minify the compiled JavaScript, Default is false.
- *   outputFile: {string} xxx
+ *   output: {string} if this is the path of an existing folder then the output JavaScript file(s)
+ *       and AST file (if any) will be written to that folder. If the path includes a file name and the
+ *       folder exists then the output JavaScript file(s) and AST file (if any) will be written to
+ *       that folder and with the file name as the basename. Otherwise or if output is just a filename
+ *       then it will be the basename of the output JavaScript file(s) and AST file if any which will
+ *       be written to the same folder as the input file.
  * @param callback function to call when complete. function(err) if err is null then compilation is successful
- * Reason for failure written to stdout.
+ * Reason for failure written to stdout. xxx is this a good idea? Perhaps only if verbose
  */
 function compileGroupFile(file, options, callback) {
     var parseOptions, text,
@@ -212,7 +217,12 @@ function compileDir(dir, options, callback, raw) {
  *   verbose: {boolean} if true write additional information to stdout. Default is false.
  *   outputAST: {boolean} if true output the AST that results from parsing the group file
  *   minify: {boolean} if true minify the compiled JavaScript, Default is false.
- *   outputFile: {string} xxx
+ *   output: {string} if this is the path of an existing folder then the output JavaScript file(s)
+ *       and AST file (if any) will be written to that folder. If the path includes a file name and the
+ *       folder exists then the output JavaScript file(s) and AST file (if any) will be written to
+ *       that folder and with the file name as the basename. Otherwise or if output is just a filename
+ *       then it will be the basename of the output JavaScript file(s) and AST file if any which will
+ *       be written to the same folder as the input file.
  * @param callback function to call when complete. function(err) if err is null then compilation is successful
  * Reason for failure written to stdout.
  */
@@ -231,7 +241,12 @@ function compileGroupDir(dir, options, callback) {
  *   verbose: {boolean} if true write additional information to stdout. Default is false.
  *   outputAST: {boolean} if true output the AST that results from parsing the group file
  *   minify: {boolean} if true minify the compiled JavaScript, Default is false.
- *   outputFile: {string} xxx
+ *   output: {string} if this is the path of an existing folder then the output JavaScript file(s)
+ *       and AST file (if any) will be written to that folder. If the path includes a file name and the
+ *       folder exists then the output JavaScript file(s) and AST file (if any) will be written to 
+ *       that folder and with the file name as the basename. Otherwise or if output is just a filename
+ *       then it will be the basename of the output JavaScript file(s) and AST file if any which will
+ *       be written to the same folder as the input file. 
  * @param callback function to call when complete. function(err) if err is null then compilation is successful
  * Reason for failure written to stdout.
  */
@@ -246,6 +261,39 @@ function writeFile(filePath, text) {
     });
 }
 
+function isDir(p) {
+    try {
+        return fs.statSync(p).isDirectory();
+    } catch (ex) {
+        // really don't care
+    }
+    return false;
+}
+
+function getFilePath(baseDir, srcFile, outputPath, suffix) {
+    var filePath, dir, name;
+    if (outputPath) {
+        if (isDir(outputPath)) {
+            filePath = path.join(outputPath, srcFile);
+        } else {
+            if (outputPath.indexOf(path.sep) >= 0) {
+                dir = path.dirname(outputPath);
+                if (!isDir(dir)) {
+                    dir = baseDir;
+                }
+            } else {
+                dir = baseDir;
+            }
+            name = path.basename(outputPath, path.extname(outputPath));
+            filePath = path.join(dir, name);
+        }
+    } else {
+        filePath = path.join(baseDir, srcFile);
+    }
+    filePath += suffix;
+    return filePath;
+}
+
 function generate(baseDir, options, callback) {
     var astFilename, filename, g, writer, t,
         groupAST = options.group;
@@ -253,9 +301,8 @@ function generate(baseDir, options, callback) {
     // xxx any pre processing of parsing output needed?
     groupAST.date = (new Date()).toString();
 
-    console.log("xxx output file: " + options.output);
     if (options.outputAST) {
-        astFilename = path.join(baseDir, groupAST.fileName + "_stg_ast.json");
+        astFilename = getFilePath(baseDir, groupAST.fileName, options.output, "_stg_ast.json");
         writeFile(astFilename, JSON.stringify({g: groupAST}, null, 4));
     }
 
@@ -266,7 +313,7 @@ function generate(baseDir, options, callback) {
     t = g.getTemplate("/compiledGroup");
     t.setArgs({g: groupAST});
     t.write(writer);
-    filename = path.join(baseDir, groupAST.fileName + "_stg.js"); // xxx _stg vs _st?
+    filename = getFilePath(baseDir, groupAST.fileName, options.output, "_stg.js");
     writeFile(filename, writer.toString());
     // xxx minify option
     callback(null);
@@ -285,7 +332,7 @@ function generateBootstrap(baseDir, options, callback) {
         writeFile(astFilename, JSON.stringify(groupAST, null, 4));
     }
 
-    filename = path.join(baseDir, groupAST.g.fileName + "_stg.js"); // xxx _stg vs _st?
+    filename = path.join(baseDir, groupAST.g.fileName + "_stg.js");
 
     // use Java STST as a separate process to generate compiled template
     var spawn = require('child_process').spawn;
