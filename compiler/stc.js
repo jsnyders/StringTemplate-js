@@ -38,6 +38,7 @@ var fs = require("fs"),
     group = require("./group.js"),
     makeGroup = group.makeGroup,
     util = require("../lib/util.js"),
+    stErrors = require("../lib/errors").st,
     st = require("../lib/stRuntime"),
     aiw = require("../lib/autoIndentWriter"),
     groupGenSTG = require("./groupGen_stg"),
@@ -308,6 +309,45 @@ function generate(baseDir, options, callback) {
 
     g = st.loadGroup(groupGenSTG);
     g.registerAttributeRenderer("string", jsAttrRenderer);
+    g.setErrorListener(function(err) {
+        var loc, locationInfo;
+        if (err.type === stErrors.PROPERTY_NOT_FOUND) {
+            return; // there are many optional properties in the AST so ignore this error
+        } // else
+        if (options.verbose) {
+            locationInfo = "";
+            if (err.file) {
+                locationInfo += err.file;
+            }
+            if (err.line) {
+                locationInfo += "," + err.line;
+                if (err.column) {
+                    locationInfo += "," + err.column;
+                }
+            }
+            console.log("Internal error during code generation (at " + locationInfo + "): " + err.message);
+            // xxx factor out common code
+            if (err.arg1 && err.arg1.loc) {
+                loc = err.arg1.loc;
+                locationInfo = "";
+                if (loc.file) {
+                    locationInfo += loc.file;
+                }
+                if (loc.line) {
+                    if (locationInfo) {
+                        locationInfo += ",";
+                    }
+                    locationInfo += loc.line;
+                    if (loc.column) {
+                        locationInfo += "," + loc.column;
+                    }
+                }
+                console.log("  At source location: " + locationInfo);
+            }
+        } else {
+            console.log("Internal error: " + err.message);
+        }
+    });
     writer = aiw.makeWriter();
 
     t = g.getTemplate("/compiledGroup");

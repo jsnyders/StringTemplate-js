@@ -233,3 +233,18 @@ empty1() ::= <<
 empty2() ::= <%
 
 %>
+
+
+//testZip(zipC1, zipC2, zipC3) ::= <<
+//$zipC1, zipC2, zipC3:{a,b,c | $a$.$b$ = $c$;
+//}$
+//>>
+
+testZip(zipC1, zipC2, zipC3) ::= <<
+$zipC1, zipC2, zipC3:{a,b,c | $testZipSub(a,b,c)$}$
+>>
+
+testZipSub(a, b, c) ::= <<
+$a$.$b$ = $c$;
+
+>>

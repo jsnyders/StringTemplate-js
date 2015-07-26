@@ -1,6 +1,6 @@
 /*
  * Template group groupGen
- * Compiled on Mon Jul 06 2015 23:01:00 GMT-0400 (EDT)
+ * Compiled on Sat Jul 25 2015 23:06:15 GMT-0400 (EDT)
  */
 var path = require("path");
 var base = path.dirname(module.filename);
@@ -1295,13 +1295,28 @@ r.args = [
 ];
 group.addTemplate("/exprMAP", r); 
 //
+// Template /exprZIP
+//
+r = function(w, rc) {
+    var g = this.owningGroup,
+        s = this.scope;
+    
+    w.pushIndentation(" ");
+    w.write("null /* todo xxx handle zip */");
+    w.popIndentation();
+};
+r.args = [
+        { name: "a"     }
+];
+group.addTemplate("/exprZIP", r); 
+//
 // Template /exprBOOLEAN
 //
 r = function(w, rc) {
     var g = this.owningGroup,
         s = this.scope;
     
-    st.write(w, s, g, rc, st.prop(s, g, rc, s.a, "value", { file: gFile, line: 249, column: 3 }));
+    st.write(w, s, g, rc, st.prop(s, g, rc, s.a, "value", { file: gFile, line: 253, column: 3 }));
 };
 r.args = [
         { name: "a"     }
@@ -1315,7 +1330,7 @@ r = function(w, rc) {
         s = this.scope;
     
     w.write("\"");
-    st.write(w, s, g, rc, st.prop(s, g, rc, s.a, "value", { file: gFile, line: 251, column: 4 }), {format: "string"});
+    st.write(w, s, g, rc, st.prop(s, g, rc, s.a, "value", { file: gFile, line: 255, column: 4 }), {format: "string"});
     w.write("\"");
 };
 r.args = [
@@ -1332,7 +1347,7 @@ r = function(w, rc) {
     w.write("[ ");
     st.write(w, s, g, rc, (function() {
     var tp = [],
-    attr = st.prop(s, g, rc, s.a, "value", { file: gFile, line: 253, column: 5 });
+    attr = st.prop(s, g, rc, s.a, "value", { file: gFile, line: 257, column: 5 });
     tp.push((function() {
         var t = g.getTemplate("listItem", s);
         t.setArgs(    [     ""
@@ -1360,7 +1375,7 @@ r = function(w, rc) {
     s = this.scope;
     
              w.write("expr");
-             st.write(w, s, g, rc, st.prop(s, g, rc, s.item, "type", { file: gFile, line: 255, column: 13 }));
+             st.write(w, s, g, rc, st.prop(s, g, rc, s.item, "type", { file: gFile, line: 259, column: 13 }));
     }, [
     
     ])),
@@ -1394,7 +1409,7 @@ r = function(w, rc) {
     w.pushIndentation("         ");
     st.write(w, s, g, rc, (function() {
     var tp = [],
-    attr = st.fn.strip(st.prop(s, g, rc, s.a, "template", { file: gFile, line: 260, column: 18 }));
+    attr = st.fn.strip(st.prop(s, g, rc, s.a, "template", { file: gFile, line: 264, column: 18 }));
     tp.push((function() {
         var t = g.getTemplate("templateElement", s);
         t.setArgs(    [     ""
@@ -1412,7 +1427,7 @@ r = function(w, rc) {
     w.pushIndentation("        ");
     st.write(w, s, g, rc, (function() {
     var tp = [],
-    attr = st.prop(s, g, rc, s.a, "args", { file: gFile, line: 262, column: 11 });
+    attr = st.prop(s, g, rc, s.a, "args", { file: gFile, line: 266, column: 11 });
     tp.push((function() {
         var t = g.getTemplate("formalArgs", s);
         t.setArgs(    [     ""
@@ -1448,8 +1463,8 @@ r = function(w, rc) {
         
                  st.write(w, s, g, rc, (function() {
                  var t = g.getTemplate("exprOption", s);
-                 t.setArgs(    [     st.prop(s, g, rc, s.o, "name", { file: gFile, line: 268, column: 27 }),
-                 st.prop(s, g, rc, s.o, "value", { file: gFile, line: 268, column: 35 })
+                 t.setArgs(    [     st.prop(s, g, rc, s.o, "name", { file: gFile, line: 272, column: 27 }),
+                 st.prop(s, g, rc, s.o, "value", { file: gFile, line: 272, column: 35 })
                       ]    );
                  return t;
                  })());
@@ -1479,7 +1494,7 @@ r = function(w, rc) {
     s = this.scope;
     
              w.write("expr");
-             st.write(w, s, g, rc, st.prop(s, g, rc, s.v, "type", { file: gFile, line: 273, column: 32 }));
+             st.write(w, s, g, rc, st.prop(s, g, rc, s.v, "type", { file: gFile, line: 277, column: 32 }));
     }, [
     
     ])),
@@ -1604,7 +1619,7 @@ r = function(w, rc) {
                  st.write(w, s, g, rc, (function() {
                  var t = g.getTemplate("alias", s);
                  t.setArgs(    [     s.k,
-                 st.prop(s, g, rc, s.a, s.k, { file: gFile, line: 291, column: 23 })
+                 st.prop(s, g, rc, s.a, s.k, { file: gFile, line: 295, column: 23 })
                       ]    );
                  return t;
                  })());
@@ -1647,9 +1662,9 @@ r = function(w, rc) {
     if (st.test(s.l)) {
     
         w.write(", { file: gFile, line: ");
-        st.write(w, s, g, rc, st.prop(s, g, rc, s.l, "line", { file: gFile, line: 302, column: 26 }));
+        st.write(w, s, g, rc, st.prop(s, g, rc, s.l, "line", { file: gFile, line: 306, column: 26 }));
         w.write(", column: ");
-        st.write(w, s, g, rc, st.prop(s, g, rc, s.l, "column", { file: gFile, line: 302, column: 44 }));
+        st.write(w, s, g, rc, st.prop(s, g, rc, s.l, "column", { file: gFile, line: 306, column: 44 }));
         w.write(" }");
     
     
