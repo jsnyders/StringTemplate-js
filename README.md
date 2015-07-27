@@ -8,7 +8,7 @@ syntax. This means that the same template processed with the same data should pr
 output when processed with the Java (reference implementation) and this JavaScript implementation.
 See below for known differences. The API will **not** be compatible with the Java implementation.  
 
-## Update 1-Jul
+## Update 26-Jul
 
 Major milestone. StringTemplate-js now uses itself to generate compiled templates.
 It was able to pass all unit tests without using the Java version of StringTemplate for code generation! 
@@ -36,11 +36,14 @@ What works at least a little
 * auto indent writer
 * indirect property reference
 * indirect template include
+* zipping multiple lists/arrays while mapping
 
 What doesn't work or isn't tested
 
-* zipping multiple lists/arrays while mapping
 * regions
+
+Nest step is to stabilize, and release first version without support for regions so other can try it out. 
+Then come back and implement regions.
 
 ## License
 BSD

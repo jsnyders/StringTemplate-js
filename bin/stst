@@ -68,7 +68,8 @@ function processTemplate(group, template, options, data) {
     if (options.verbose /*xxx and going to stdout*/) {
         console.log("Template output:");
     }
-    console.log(writer.toString());
+    // don't use console.log because it adds an extra new line at the end.
+    process.stdout.write(writer.toString());
 }
 
 
@@ -219,7 +220,7 @@ if (argv.verbose) {
 // read data
 // xxx
 if (!argv._[1]) {
-    console.log("xxx need to read from stding");
+    console.log("xxx need to read from stdin");
 } else {
     data = fs.readFileSync(argv._[1], {
         encoding: argv.encoding

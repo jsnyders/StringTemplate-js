@@ -174,9 +174,7 @@ describe("test group test", function() {
             // there are no arguments
 
             console.log("xxx errors: " + errors);
-            console.log("xxx ref: " + refOutput);
             t.write(writer);
-            console.log("xxx js: " + writer.toString());
             assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
             // xxx need to verify runtime errors and results separately 
             // xxx pass throught not yet hooked up
@@ -197,10 +195,8 @@ describe("test group test", function() {
             // there are no arguments
 
             console.log("xxx errors: " + errors);
-            console.log("xxx ref: " + refOutput);
             t.setArgs([["apple", "banana", null, "orange"]]);
             t.write(writer);
-            console.log("xxx js: " + writer.toString());
             assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
             done();
         }, [ "-w", "20"]);
@@ -299,6 +295,29 @@ describe("test group test", function() {
             assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
             done();
         });
+    });
+
+    it("should generate same output as reference implementation for template testZipMap", function(done) {
+        var t,
+            data = {
+                "zipC1": ["obj1", "thing", "obj2", "obj2"],
+                "zipC2": [ "p1", "wrench", "x", "p2"],
+                "zipC3": [ "apple", "10092", "foo"]
+            },
+            group = st.loadGroup(testTemplateGroup),
+            writer = w.makeWriter();
+
+        getSTReferenceOutput("testGroup", "testZipMap", data, function(refOutput, errors) {
+            t = group.getTemplate("/testZipMap");
+            assert.notStrictEqual(t, null, "found a template");
+            // there are no arguments
+
+            t.setArgs(data);
+            t.write(writer);
+            assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
+            done();
+        });
+
     });
 
 });

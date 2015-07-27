@@ -255,7 +255,6 @@ function compileRawGroupDir(dir, options, callback) {
     compileDir(dir, options, callback, true);
 }
 
-// xxx
 function writeFile(filePath, text) {
     fs.writeFileSync(filePath, text, {
         mode: 420 // 0x644
@@ -295,8 +294,24 @@ function getFilePath(baseDir, srcFile, outputPath, suffix) {
     return filePath;
 }
 
+function minify(jsCodeIn, filename, options) {
+    var UglifyJS, result;
+
+    try {
+        UglifyJS = require("uglify-js");
+    } catch (ex) {
+        if (options.verbose) {
+            console.log("Warning uglify-js module not installed. Not able to minify.");
+        }
+        return;
+    }
+
+    result = UglifyJS.minify(jsCodeIn, {fromString: true});
+    writeFile(filename, result.code);
+}
+
 function generate(baseDir, options, callback) {
-    var astFilename, filename, g, writer, t,
+    var astFilename, filename, g, writer, t, code,
         groupAST = options.group;
 
     // xxx any pre processing of parsing output needed?
@@ -354,10 +369,18 @@ function generate(baseDir, options, callback) {
     t.setArgs({g: groupAST});
     t.write(writer);
     filename = getFilePath(baseDir, groupAST.fileName, options.output, "_stg.js");
-    writeFile(filename, writer.toString());
-    // xxx minify option
+
+    code = writer.toString();
+    writeFile(filename, code);
+    if (options.minify) {
+        filename = getFilePath(baseDir, groupAST.fileName, options.output, "_stg.min.js");
+        minify(code, filename, options);
+    }
+
     callback(null);
 }
+
+
 
 function generateBootstrap(baseDir, options, callback) {
     var astFilename, filename,

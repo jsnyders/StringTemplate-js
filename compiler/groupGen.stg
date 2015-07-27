@@ -247,7 +247,11 @@ exprMAP(a) ::= <<
 >>
 
 exprZIP(a) ::= <<
- null /* todo xxx handle zip */
+(function() {
+    var attrs = [];
+    $a.expr:{e|attrs.push($({expr$e.type$})(e)$);};separator="\n"$
+    return st.zipMap(attrs, $({expr$a.using.type$})(a.using)$);
+})()
 >>
 
 exprBOOLEAN(a) ::= <<$a.value$>>

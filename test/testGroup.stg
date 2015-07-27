@@ -234,17 +234,27 @@ empty2() ::= <%
 
 %>
 
+testZipMap(zipC1, zipC2, zipC3) ::= <<
+Test ZipMap:
+  First as is:
+$testZip1(zipC1, zipC2, zipC3)$
+  Then with ;\n separator:
+$zipC1, zipC2, zipC3:{a,b,c | $a$.$b$ = $c$};separator=";\n"$
+  Then with ', ' separator:
+$zipC1, zipC2, zipC3:{a,b,c | $a$.$b$ = $c$};separator=", "$
+  With i, i0:
+$zipC1, zipC2, zipC3:{a,b,c | $i$: $a$.$b$ = $c$;};separator="\n"$
+$zipC1, zipC2, zipC3:{a,b,c | $i0$: $a$.$b$ = $c$;};separator="\n"$
 
-//testZip(zipC1, zipC2, zipC3) ::= <<
-//$zipC1, zipC2, zipC3:{a,b,c | $a$.$b$ = $c$;
-//}$
-//>>
+>>
+// xxx differing number of args
+// check for null in c
 
-testZip(zipC1, zipC2, zipC3) ::= <<
-$zipC1, zipC2, zipC3:{a,b,c | $testZipSub(a,b,c)$}$
+testZip1(zipC1, zipC2, zipC3) ::= <<
+$zipC1, zipC2, zipC3:{a,b,c | $testZipSub(obj=a,prop=b,val=c)$}$
 >>
 
-testZipSub(a, b, c) ::= <<
-$a$.$b$ = $c$;
+testZipSub(obj, prop, val) ::= <<
+$obj$.$prop$ = $val$;
 
 >>
