@@ -50,8 +50,7 @@ BSD
 
 ## Install
 
-TBD for now download or fork the project
-use npm link to add stc as a global command or you can give the path to stc in the bin folder
+npm install stringtemplate-js
 
 ## Using
 
