@@ -2,6 +2,8 @@
 
 Under construction
 
+30-Jul: Apologies to anyone who downloaded the first version I added to npm. It does not work as is. It may work if you compile the pegjs grammer. I plan to update the version on npm soon.
+
 This will be a pure JavaScript implementation of [StringTemplate v4](http://www.stringtemplate.org/).
 Templates will be compiled to JavaScript. The intent is to be fully compatible with StringTemplate
 syntax. This means that the same template processed with the same data should produce the same
