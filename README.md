@@ -1,16 +1,22 @@
 # StringTemplate v4 for JavaScript
 
-Under construction
-
-30-Jul: Apologies to anyone who downloaded the first version I added to npm. It does not work as is. It may work if you compile the pegjs grammer. I plan to update the version on npm soon.
-
-This will be a pure JavaScript implementation of [StringTemplate v4](http://www.stringtemplate.org/).
-Templates will be compiled to JavaScript. The intent is to be fully compatible with StringTemplate
+stringtemplate-js is a pure JavaScript implementation of [StringTemplate v4](http://www.stringtemplate.org/).
+Templates are compiled to JavaScript. The intent is to be fully compatible with StringTemplate
 syntax. This means that the same template processed with the same data should produce the same
 output when processed with the Java (reference implementation) and this JavaScript implementation.
 See below for known differences. The API will **not** be compatible with the Java implementation.  
 
-## Update 26-Jul
+# News
+
+## 9-Aug
+Version 0.1.1 ready for alpha testing. Feel free to use github Issues to report problems or make suggestions.
+Template regions not yet supported.
+
+## 30-Jul
+Apologies to anyone who downloaded the 0.1.0 version I added to npm. It does not work as is. 
+It may work if you compile the pegjs grammer. I plan to update the version on npm soon.
+
+## 26-Jul
 
 Major milestone. StringTemplate-js now uses itself to generate compiled templates.
 It was able to pass all unit tests without using the Java version of StringTemplate for code generation! 
@@ -52,7 +58,12 @@ BSD
 
 ## Install
 
-npm install stringtemplate-js
+StringTemplate adds two command line utilities. The template compiler `stc` and standalone tool `stst` for testing 
+templates with JSON input. For that reason it is best to install globally.
+
+npm install -g stringtemplate-js
+
+If you don't install globally links to the stc and stst commands are in the node_modules/.bin folder.
 
 ## Using
 
@@ -60,6 +71,7 @@ The file samples/hello/hello.st contains (with comments removed):
 
 ```
 hello(audience) ::= <<Hello $audience;null="is anyone there?"$!
+
 >>
 ```
 
@@ -74,24 +86,22 @@ This produces `hello_stg.js` in the same folder. Type `stc -h` for help on stc c
 
 Templates can also be compiled from your own application using the API in compiler/stc.js. Grunt task TBD.
  
-* Step 2 Execute the compiled template. This can be done with the JavaScript version of stst that is in the bin folder.
+* Step 2 Execute the compiled template. This can be done with stst that is in the bin folder.
 
 ```
 cd samples/hello
-../../bin/stst hello hello.json
+stst hello hello.json
 ```
 
 The first argument is the template name without the _stg.js suffix. The second argument is a JSON file that supplies
-the data for the template.
+the data for the template. Type `stst -h` for help on stst command line options.
 
-NOTE: The JavaScript version of stst is very rough. Ignore the debugging output for now.
-
-To execute the template from your application:
+To execute the template from your application add code similar to the following:
 
 ```
 cd samples/hello
 node
-var st = require("../../lib/stRuntime");
+var st = require("stringtemplate-js");
 var g = st.loadGroup(require("./hello_stg"));
 console.log(g.render("hello", ["world"]);
 // or

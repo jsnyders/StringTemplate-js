@@ -1,6 +1,6 @@
 {
     "name": "stringtemplate-js",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "StringTemplate v4 for JavaScript",
     "keywords": ["Template, StringTemplate"],
     "main": "lib/stRuntime.js",
@@ -9,7 +9,8 @@
         "url": "https://github.com/jsnyders/StringTemplate-js"
     },
     "bin": {
-        "stc": "bin/stc"
+        "stc": "bin/stc",
+        "stst": "bin/stst"
     },
     "scripts": {
         "test": "grunt mochaTest"
@@ -21,7 +22,7 @@
         "node": ">=0.12.4"
     },
     "dependencies": {
-        "yargs": "~3.6"
+        "yargs": "~3.18"
     },
     "optionalDependencies": {
         "uglify-js": "~2.3",
@@ -33,8 +34,7 @@
         "grunt-contrib-watch": "~0.6",
         "grunt-peg": "~1.5",
         "grunt-mocha-test": "~0.12",
-        "grunt-contrib-nodeunit": "~0.4",
-        "grunt-contrib-uglify": "~0.8",
+        "grunt-contrib-uglify": "~0.9",
         "grunt-contrib-watch": "~0.6",
         "grunt-contrib-copy": "~0.8"
     }

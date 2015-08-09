@@ -1,6 +1,6 @@
 /*
  * Template group groupGen
- * Compiled on Sun Jul 26 2015 18:07:02 GMT-0400 (EDT)
+ * Compiled on Sun Aug 09 2015 18:53:08 GMT-0400 (EDT)
  */
 var path = require("path");
 var base = path.dirname(module.filename);

@@ -44,7 +44,7 @@ var fs = require("fs"),
     groupGenSTG = require("./groupGen_stg"),
     jsAttrRenderer = require("../lib/javaScriptAttributeRenderer");
 
-var VERSION = "0.1.0";
+var VERSION = "0.1.1";
 
 var defaultOptions = {
     verbose: false,

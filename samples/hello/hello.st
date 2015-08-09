@@ -7,4 +7,5 @@ execute with:
     stst hello hello_empty.json
 */
 hello(audience) ::= <<Hello $audience;null="is anyone there?"$!
+
 >>

@@ -15,7 +15,7 @@ function getSTReferenceOutput(group, template, data, callback, options) {
     var errOutput = "";
     var args = (options || []).concat([options || "", group + "." + template]);
 
-    var stst = spawn("stst", args, {
+    var stst = spawn("stst_java", args, {
         cwd: path.dirname(module.filename),
         stdio: ["pipe", "pipe", "pipe"]
     });

@@ -1,0 +1,32 @@
+{
+    "names": [
+        {
+            "first": "Max",
+            "last": "Smith",
+            "hasTitle": false
+        },
+        {
+            "first": "Dan",
+            "last": "Jones",
+            "hasTitle": true,
+            "title": "Dr."
+        }
+    ],
+    "conditions": {
+        "c1": true,
+        "c2": 0,
+        "c3": null,
+        "c4": false,
+        "c5": "value"
+    },
+    "propName": "last",
+    "list": ["apple", "banana", null, "orange"],
+    "board": ["x", " ", " ", "O", "O", "X", "X", " ", " "],
+    "string": "this is a string",
+    "obj": { "7": "seven", "1": "one", "y2": "two", "a3": "three"},
+    "deep": { "level1": { "things": {"stuff": "gold", "junk": "lemon" }}},
+    "zipC1": ["obj1", "thing", "obj2", "obj2"],
+    "zipC2": [ "p1", "wrench", "x", "p2"],
+    "zipC3": [ "apple", "10092", "foo"]
+    
+}
