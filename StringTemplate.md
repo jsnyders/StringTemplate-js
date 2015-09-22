@@ -20,8 +20,8 @@ Delimiters below). Text inside the delimiters are template expressions that dete
 the output. The insertion happens at the point where the expression occurs within the literal text.
 
 StringTemplate templates enforce a separation between the template and the data (this is also known as model - view 
-separation where the data is referred to the model and the template is the view). Templates cannot implement
-any business logic*. The template cannot modify the data model. Processing the template produces no side effects.
+separation where the data is referred to as the model and the template is the view). Templates cannot implement
+any business logic *. The template cannot modify the data model. Processing the template produces no side effects.
 The data model is created prior to template processing, which means the order of data acquisition is independent of the
 order that the data is referenced by template processing.
 
@@ -31,7 +31,7 @@ for the efficient generation of output text. They are not sufficient to implemen
 
 These claims of strict separation apply to the StringTemplate language. It is possible to abuse the API such that
 side effects or data modifications are possible. These are faults of the application implementation and not
-StringTempalte. 
+StringTemplate.
 
 \* One place where it could be argued that templates allow business logic is in conditional expressions because
 they allow boolean operators: and, or, and not. These operators are for convenience and provide very little opportunity
@@ -60,7 +60,7 @@ Dear $name$,
 You may have already won $prize$. To collect your prize...
 ```
 
-As will be explained in detail below all of the text is copied verbatim to the output except for what is inside the
+As will be explained in detail below all of the text is copied verbatim to the output except for what is in between the
 dollar signs ($): `$name$` will be replaced with the data associated with attribute `name` and `$prize$` will be 
  replaced with the data associated with attribute `prize`.
 

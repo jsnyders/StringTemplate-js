@@ -311,7 +311,7 @@ keyValue
  * Match:
  *   {<template-body>}
  */
-anonymousTemplate
+anonymousTemplate "anonymous template"
     = "{" &{subtemplateDepth += 1; return true;} 
         t:template "}" {
             subtemplateDepth -= 1; // xxx is this subtemplate depth stuff needed?
@@ -924,7 +924,7 @@ TRUE
 FALSE
     = "false" { return { type: "BOOLEAN", loc: getLocation(), value: false }; }
 
-EMPTY_LIST
+EMPTY_LIST "empty list"
     = '[' __ ']' { return { type: "EMPTY_LIST", loc: getLocation(), value: null }; }
 
 STRING "string"
