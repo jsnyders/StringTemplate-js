@@ -161,10 +161,10 @@ delimiters
             var start = s.value,
                 stop = e.value;
             if (start.length !== 1 || stop.length !== 1) {
-                error("Delimiter value must be exactly one character");
+                error("Delimiter value must be exactly one character.");
             }
             if (VALID_DELIMITERS.indexOf(start) < 0 || VALID_DELIMITERS.indexOf(stop) < 0) {
-                error("Invalid delimiter character");
+                error("Invalid delimiter character.");
             }
             delimiterStartChar=s.value.charAt(0);
             delimiterStopChar=e.value.charAt(0);
@@ -198,7 +198,7 @@ templateDef
                         enclosingTemplate: enclosing.value
                     };
                 }
-            /	n:ID "(" __ args:formalArgs __ ")" {
+            /	n:ID __ "(" __ args:formalArgs __ ")" {
                     return {
                         name: n.value,
                         args: args
@@ -210,7 +210,7 @@ templateDef
             s:STRING { return s.value; }
             / s:BIGSTRING { return s.value; }
             / s:BIGSTRING_NO_NL { return s.value; }
-            / { error("Missing template"); }
+            / { error("Missing template."); }
         ) {
             if (def.enclosingTemplate) {
                 verboseLog("Region definition: " + def.enclosingTemplate + "." + def.name);
@@ -339,7 +339,7 @@ templateFile
             s:STRING { return s.value; }
             / s:BIGSTRING { return s.value; }
             / s:BIGSTRING_NO_NL { return s.value; }
-            / { error("Missing template"); }
+            / { error("Missing template."); }
         ) __ {
             if (name.value !== curGroup.fileName) {
                 error("Template name must match filename.");
@@ -570,12 +570,12 @@ option
             var optionName = name.value,
                 value;
             if (!curGroup.isValidOption(optionName)) {
-                error("No such option " + optionName);
+                error("No such option " + optionName + ".");
             }
 
             value = val || curGroup.defaultOptionValue(optionName);
             if (value === null) {
-                error("Value required for option " + optionName);
+                error("Value required for option " + optionName + ".");
             }
             return {
                 name: optionName,
@@ -935,7 +935,8 @@ STRING "string"
 STRING_CHAR
     = !('"' / "\\" / "\r" / "\n") . { return text(); }
     / "\\" sequence:ESCAPE_CHAR { return sequence; }
-    / EOL { error("Unterminated string"); }
+    / EOL { error("Unterminated string."); }
+    / EOF { error("Unterminated string."); }
 
 ESCAPE_CHAR
     = "n" { return "\n"; }
@@ -960,7 +961,7 @@ BIGSTRING_CHAR
     = !(">>" / "\\>>" / ">\\>") . { return text(); }
     / "\\>>" { return ">>"; }
     / ">\\>" { return ">>"; }
-    / EOF { error("Unterminated big string"); }
+    / EOF { error("Unterminated big string."); }
 
 // same as BIGSTRING but means ignore newlines later
 BIGSTRING_NO_NL "big string"
@@ -975,6 +976,7 @@ BIGSTRING_NO_NL "big string"
                 }
             };
         }
+    / "<%" .* EOF { error("Unterminated big string."); }
 
 EOF "end of file"
     = !.
@@ -1049,7 +1051,7 @@ ESCAPE
         / "t" { return "\t"; }
         / " " { return " "; }
         / . {
-                error("Invalid escape character '" + text() + "'");
+                error("Invalid escape character '" + text() + "'.");
             }
         ) { return ch; }
 

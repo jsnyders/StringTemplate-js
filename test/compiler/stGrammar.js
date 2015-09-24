@@ -62,11 +62,11 @@ describe("stGrammar", function() {
         it("should give error if bad delimiters", function() {
             var text = 'delimiters "<$","$>"';
 
-            assert.equal(parseGroup(text).message, "Delimiter value must be exactly one character" );
+            assert.equal(parseGroup(text).message, "Delimiter value must be exactly one character." );
             text = 'delimiters "$" ';
             assert.equal(parseGroup(text).message, "Expected \",\" but end of input found." );
             text = 'delimiters "@", "@" ';
-            assert.equal(parseGroup(text).message, "Invalid delimiter character" );
+            assert.equal(parseGroup(text).message, "Invalid delimiter character." );
         });
 
         it("should allow just imports", function() {
@@ -453,5 +453,385 @@ describe("stGrammar", function() {
 
     });
 
-    // xxx many more tests needed
+    describe("templates", function() {
+        it("should recognize a template defined with a string", function () {
+            var text = 't1() ::= "a template <attr>."',
+                result = {
+                    templates: {
+                        "/t1": {
+                            name: "t1",
+                            args: [],
+                            template: [
+                                {
+                                    type: "TEXT",
+                                    loc: { line: 1, column: 1 },
+                                    value: "a template " 
+                                },
+                                {
+                                    type: "EXPR",
+                                    loc: { line: 1, column: 12 },
+                                    expr: {
+                                        type: "ATTRIBUTE",
+                                        loc: { line: 1, column: 13 },
+                                        name: "attr"
+                                    } 
+                                },
+                                {
+                                    type: "TEXT",
+                                    loc: { line: 1, column: 18 },
+                                    value: "."
+                                }
+                            ]
+                        }
+                    },
+                    dictionaries: {},
+                    aliases: {},
+                    imports: []
+                };
+
+            assert.deepEqual(parseGroup(text), result);
+        });
+
+        it("should recognize a template defined with a big string", function () {
+            var text = 't1() ::= <<\na template\n<attr>.\n>>', // note leading and trailing new lines are stripped
+                result = {
+                    templates: {
+                        "/t1": {
+                            name: "t1",
+                            args: [],
+                            template: [
+                                {
+                                    type: "TEXT",
+                                    loc: { line: 2, column: 1 },
+                                    value: "a template"
+                                },
+                                {
+                                    type: "NEWLINE",
+                                    loc: { line: 2, column: 11 },
+                                    value: "\n"
+                                },
+                                {
+                                    type: "EXPR",
+                                    loc: { line: 3, column: 1 },
+                                    expr: {
+                                        type: "ATTRIBUTE",
+                                        loc: { line: 3, column: 2 },
+                                        name: "attr"
+                                    }
+                                },
+                                {
+                                    type: "TEXT",
+                                    loc: { line: 3, column: 7 },
+                                    value: "."
+                                }
+                            ]
+                        }
+                    },
+                    dictionaries: {},
+                    aliases: {},
+                    imports: []
+                };
+
+            assert.deepEqual(parseGroup(text), result);
+        });
+
+        it("should recognize a template defined with a big string ignoring new lines", function () {
+            var text = 't1() ::= <%\na template\n<attr>.\n%>', // note all new lines are stripped
+                result = {
+                    templates: {
+                        "/t1": {
+                            name: "t1",
+                            args: [],
+                            template: [
+                                {
+                                    type: "TEXT",
+                                    loc: { line: 2, column: 1 },
+                                    value: "a template"
+                                },
+                                null,
+                                {
+                                    type: "EXPR",
+                                    loc: { line: 3, column: 1 },
+                                    expr: {
+                                        type: "ATTRIBUTE",
+                                        loc: { line: 3, column: 2 },
+                                        name: "attr"
+                                    }
+                                },
+                                {
+                                    type: "TEXT",
+                                    loc: { line: 3, column: 7 },
+                                    value: "."
+                                }
+                            ]
+                        }
+                    },
+                    dictionaries: {},
+                    aliases: {},
+                    imports: []
+                };
+
+            assert.deepEqual(parseGroup(text), result);
+        });
+
+        it("should recognize a template with one argument", function () {
+            var text = 't1(a)::=<<\na<a>\n>>',
+                result = {
+                    templates: {
+                        "/t1": {
+                            name: "t1",
+                            args: [ {
+                                type: "FORMAL_ARG",
+                                loc: { line: 1, column: 4 },
+                                name: "a"
+                            } ],
+                            template: [
+                                {
+                                    type: "TEXT",
+                                    loc: { line: 2, column: 1 },
+                                    value: "a"
+                                },
+                                {
+                                    type: "EXPR",
+                                    loc: { line: 2, column: 2 },
+                                    expr: {
+                                        type: "ATTRIBUTE",
+                                        loc: { line: 2, column: 3 },
+                                        name: "a"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    dictionaries: {},
+                    aliases: {},
+                    imports: []
+                };
+
+            assert.deepEqual(parseGroup(text), result);
+        });
+
+        it("should recognize a template with multiple arguments", function () {
+            var text = 't1 ( a , b ) ::= <<\na<a> b<b>\n>>',
+                result = {
+                    templates: {
+                        "/t1": {
+                            name: "t1",
+                            args: [ {
+                                type: "FORMAL_ARG",
+                                loc: { line: 1, column: 6 },
+                                name: "a"
+                            }, {
+                                type: "FORMAL_ARG",
+                                loc: { line: 1, column: 10 },
+                                name: "b"
+                            } ],
+                            template: [
+                                {
+                                    type: "TEXT",
+                                    loc: { line: 2, column: 1 },
+                                    value: "a"
+                                },
+                                {
+                                    type: "EXPR",
+                                    loc: { line: 2, column: 2 },
+                                    expr: {
+                                        type: "ATTRIBUTE",
+                                        loc: { line: 2, column: 3 },
+                                        name: "a"
+                                    }
+                                },
+                                {
+                                    type: "TEXT",
+                                    loc: { line: 2, column: 5 },
+                                    value: " b"
+                                },
+                                {
+                                    type: "EXPR",
+                                    loc: { line: 2, column: 7 },
+                                    expr: {
+                                        type: "ATTRIBUTE",
+                                        loc: { line: 2, column: 8 },
+                                        name: "b"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    dictionaries: {},
+                    aliases: {},
+                    imports: []
+                };
+
+            assert.deepEqual(parseGroup(text), result);
+        });
+
+        it("should recognize a template with multiple arguments with default values of each type", function () {
+            var text = 't1 ( a , b="one", c=true, d=false, e=[],f={sub} ) ::= <<\n<a><b><c><d><e><f>\n>>',
+                result = {
+                    templates: {
+                        "/t1": {
+                            name: "t1",
+                            args: [ {
+                                type: "FORMAL_ARG",
+                                loc: { line: 1, column: 6 },
+                                name: "a"
+                            }, {
+                                type: "FORMAL_ARG",
+                                loc: { line: 1, column: 10 }, 
+                                name: "b",
+                                defaultValue: {
+                                    type: "STRING",
+                                    loc: { line: 1, column: 12 },
+                                    value: "one"
+                                }
+                            }, {
+                                type: "FORMAL_ARG",
+                                loc: { line: 1, column: 19 },
+                                name: "c",
+                                defaultValue: {
+                                    type: "BOOLEAN",
+                                    loc: { line: 1, column: 21 },
+                                    value: true
+                                }
+                            }, {
+                                type: "FORMAL_ARG",
+                                loc: { line: 1, column: 27 },
+                                name: "d",
+                                defaultValue: {
+                                    type: "BOOLEAN",
+                                    loc: { line: 1, column: 29 },
+                                    value: false
+                                }
+                            }, {
+                                type: "FORMAL_ARG",
+                                loc: { line: 1, column: 36 },
+                                name: "e",
+                                defaultValue: {
+                                    type: "EMPTY_LIST",
+                                    loc: { line: 1, column: 38 },
+                                    value: null
+                                }
+                            }, {
+                                type: "FORMAL_ARG",
+                                loc: { line: 1, column: 41 },
+                                name: "f",
+                                defaultValue: {
+                                    type: "ANON_TEMPLATE",
+                                    loc: { line: 1, column: 43 },
+                                    value: [
+                                        {
+                                            type: "TEXT",
+                                            loc: { line: 1, column: 44 },
+                                            value: "sub"
+                                        }
+                                    ]
+                                }
+                            } ],
+                            template: [
+                                {
+                                    type: "EXPR",
+                                    loc: { line: 2, column: 1 },
+                                    expr: {
+                                        type: "ATTRIBUTE",
+                                        loc: { line: 2, column: 2 },
+                                        name: "a"
+                                    }
+                                },
+                                {
+                                    type: "EXPR",
+                                    loc: { line: 2, column: 4 },
+                                    expr: {
+                                        type: "ATTRIBUTE",
+                                        loc: { line: 2, column: 5 },
+                                        name: "b"
+                                    }
+                                },
+                                {
+                                    type: "EXPR",
+                                    loc: { line: 2, column: 7 },
+                                    expr: {
+                                        type: "ATTRIBUTE",
+                                        loc: { line: 2, column: 8 },
+                                        name: "c"
+                                    }
+                                },
+                                {
+                                    type: "EXPR",
+                                    loc: { line: 2, column: 10 },
+                                    expr: {
+                                        type: "ATTRIBUTE",
+                                        loc: { line: 2, column: 11 },
+                                        name: "d"
+                                    }
+                                },
+                                {
+                                    type: "EXPR",
+                                    loc: { line: 2, column: 13 },
+                                    expr: {
+                                        type: "ATTRIBUTE",
+                                        loc: { line: 2, column: 14 },
+                                        name: "e"
+                                    }
+                                },
+                                {
+                                    type: "EXPR",
+                                    loc: { line: 2, column: 16 },
+                                    expr: {
+                                        type: "ATTRIBUTE",
+                                        loc: { line: 2, column: 17 },
+                                        name: "f"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    dictionaries: {},
+                    aliases: {},
+                    imports: []
+                };
+
+            assert.deepEqual(parseGroup(text), result);
+        });
+
+        it("should recognize a template with syntax error missing ) in args", function () {
+            var text = 't1(a ::= <<\na<a> b<b>\n>>';
+
+            assert.equal(parseGroup(text).message, 'Expected ")", "," or "=" but ":" found.');
+        });
+
+        it("should recognize a template with syntax error bad ::=", function () {
+            var text = 't1() := <<\na\n>>';
+
+            assert.equal(parseGroup(text).message, 'Expected "::=" but ":" found.');
+        });
+
+        it("should recognize a template with syntax error missing template", function () {
+            var text = 't1() ::= something else';
+
+            assert.equal(parseGroup(text).message, 'Missing template.');
+        });
+
+        it("should recognize a template with syntax error unterminated string", function () {
+            var text = 't1() ::= "abc';
+
+            assert.equal(parseGroup(text).message, 'Unterminated string.');
+            text = 't1() ::= "abc\n';
+            assert.equal(parseGroup(text).message, 'Unterminated string.');
+        });
+
+        it("should recognize a template with syntax error unterminated big string", function () {
+            var text = 't1() ::= <<\na';
+
+            assert.equal(parseGroup(text).message, 'Unterminated big string.');
+        });
+
+        it("should recognize a template with syntax error unterminated big string ignore new lines", function () {
+            var text = 't1() ::= <%\na';
+
+            assert.equal(parseGroup(text).message, 'Unterminated big string.');
+        });
+    });
+
+    // xxx many more tests needed: aliases, escaping, all kinds of expressions
 });
