@@ -8,6 +8,9 @@ See below for known differences. The API will **not** be compatible with the Jav
 
 # News
 
+## 7-Nov
+Tested with Node 4.2.2. Unit tests pass and seems working fine.
+
 ## 9-Aug
 Version 0.1.1 ready for alpha testing. Feel free to use github Issues to report problems or make suggestions.
 Template regions not yet supported.

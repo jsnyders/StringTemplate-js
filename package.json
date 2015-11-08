@@ -22,20 +22,19 @@
         "node": ">=0.12.4"
     },
     "dependencies": {
-        "yargs": "~3.18"
+        "yargs": "~3.29"
     },
     "optionalDependencies": {
-        "uglify-js": "~2.3",
-        "source-map": "~0.4"
+        "uglify-js": "~2.5",
+        "source-map": "~0.5"
     },
     "devDependencies": {
         "grunt": "~0.4.5",
         "grunt-contrib-jshint": "~0.11",
         "grunt-contrib-watch": "~0.6",
-        "grunt-peg": "~1.5",
+        "grunt-peg": "~2.0",
         "grunt-mocha-test": "~0.12",
-        "grunt-contrib-uglify": "~0.9",
-        "grunt-contrib-watch": "~0.6",
+        "grunt-contrib-uglify": "~0.10",
         "grunt-contrib-copy": "~0.8"
     }
 }
