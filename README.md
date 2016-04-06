@@ -66,7 +66,7 @@ templates with JSON input. For that reason it is best to install globally.
 
 npm install -g stringtemplate-js
 
-If you don't install globally links to the stc and stst commands are in the node_modules/.bin folder.
+If you don't install globally links to the stc and stst commands are in the `bin` folder.
 
 ## Using
 
