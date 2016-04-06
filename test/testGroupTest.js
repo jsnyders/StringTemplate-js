@@ -36,7 +36,7 @@ function getSTReferenceOutput(group, template, data, callback, options) {
     });
 }
 
-describe("test group test", function() {
+xdescribe("test group test", function() {
 
     it("should generate same output as reference implementation for template testEscapes", function(done) {
         var t,
