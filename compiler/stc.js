@@ -380,8 +380,7 @@ function generate(baseDir, options, callback) {
     callback(null);
 }
 
-
-
+/*
 function generateBootstrap(baseDir, options, callback) {
     var astFilename, filename,
         groupAST = options.group;
@@ -413,6 +412,8 @@ function generateBootstrap(baseDir, options, callback) {
     });
 
 }
+*/
+
 
 module.exports = {
     version: VERSION,

@@ -29,7 +29,10 @@ module.exports = function(grunt) {
                 options: {
                     node: true
                 },
-                src: ["lib/*.js", "compiler/*.js"]
+                src: [
+                    "lib/*.js", "compiler/*.js",
+                    "!compiler/stGrammar.js", "!compiler/groupGen_stg.js"
+                ]
             }
         },
 
