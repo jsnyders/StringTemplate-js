@@ -13,7 +13,7 @@ var spawn = require('child_process').spawn;
 function getSTReferenceOutput(group, template, data, callback, options) {
     var output = "";
     var errOutput = "";
-    var args = (options || []).concat([options || "", group + "." + template]);
+    var args = (options || []).concat([group + "." + template]);
 
     var stst = spawn("stst_java", args, {
         cwd: path.dirname(module.filename),
@@ -173,7 +173,8 @@ describe("test group test", function() {
             assert.notStrictEqual(t, null, "found a template");
             // there are no arguments
 
-            console.log("xxx errors: " + errors);
+            if (errors)
+                console.log("xxx errors: " + errors);
             t.write(writer);
             assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
             // xxx need to verify runtime errors and results separately 
@@ -194,7 +195,8 @@ describe("test group test", function() {
             assert.notStrictEqual(t, null, "found a template");
             // there are no arguments
 
-            console.log("xxx errors: " + errors);
+            if (errors)
+                console.log("xxx errors: " + errors);
             t.setArgs([["apple", "banana", null, "orange"]]);
             t.write(writer);
             assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
