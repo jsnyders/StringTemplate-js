@@ -121,24 +121,25 @@ Additional development dependencies: need grunt-cli, mocha and pegjs installed g
 
 ## Run unit tests
 
-To run the unit tests, using mocha, you need also the STSTv4 tool to launch StringTemplate from command line. For several test StringTemplate-js run the same test against the reference implementation in java of StringTemplate and then compares the output.
+To run the unit tests, using mocha, you need also the [STSTv4](https://github.com/jsnyders/STSTv4) tool to launch StringTemplate from command line. For several tests StringTemplate-js run the same test against the java reference implementation of StringTemplate and then compares the output.
 
-1. install or build from source the STSTv4 tool.
+1. install or build from source the [STSTv4](https://github.com/jsnyders/STSTv4) tool.
 
 1. the testing code expects to find the ``stst_java`` command in your ``PATH``. On Unix you can copy it from the STSTv4 project (``stst.sh``) and edit the STST_HOME variable:
 
    ```
-   StringTemplate-js $ cp ../STSTv4/stst.sh stst_java
+   StringTemplate-js $ cp $STST_HOME/stst.sh stst_java
+   StringTemplate-js $ export PATH=$PATH:`pwd`
    StringTemplate-js $ grep "STST_HOME=" stst_java
    STST_HOME=$( cd "$( dirname $0 )" && pwd )
    StringTemplate-js $ vi stst_java
    StringTemplate-js $ grep "STST_HOME=" stst_java
-   STST_HOME=/opt/working-dir/STSTv4   # Put here where STSTv4 is installed, this is mine.
+   STST_HOME=/opt/working-dir/STSTv4   # Put here where STSTv4 is installed, this is my configuration as an example.
    ```
 
 1. install the required npm packages:
    ```
-   StringTemplate-js $ npm install yargs
+   StringTemplate-js $ npm install yargs mocha grunt grunt-peg grunt-contrib-jshint grunt-contrib-watch grunt-mocha-test grunt-contrib-copy grunt-contrib-uglify
    ```
 
 1. you need to compile the ``.stg`` files used for tests:
@@ -149,13 +150,12 @@ To run the unit tests, using mocha, you need also the STSTv4 tool to launch Stri
    StringTemplate-js/test $ cd ..
    ```
 
-1. test the stst_java script:
+1. test that the ``stst_java`` script is working:
 
    ```
    StringTemplate-js $ echo "{\"arg1\": {\"hasTitle\": true, \"title\": \"Mr\", \"first\": \"Sam\", \"last\": \"Smith\"}}" | stst_java -t test testGroup.simple
    Greeting: Mr [Sam], [Smith]
        Body
-   marco@lizard /opt/working-dir/StringTemplate-js $
    ```
 
 1. now you can run the tests suite:
