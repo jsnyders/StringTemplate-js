@@ -238,18 +238,18 @@ describe("autoIndentWriter", function() {
         it("should handle nested anchors", function() {
             var n, expected, w = aiw.makeWriter({eol: "\n"});
 
-            n = w.write("12345");
+            n = w.write("12345");   // Write 5 chars.
             assert.strictEqual(n, 5, "correct number of chars written");
-            w.pushAnchorPoint();
-            n = w.write("\nabc");
+            w.pushAnchorPoint();   // Anchor at 5th char.
+            n = w.write("\nabc");   // Write "\n"" (1 char) plus 5 spaces plus "abc".
             assert.strictEqual(n, 9, "correct number of chars written");
-            w.pushAnchorPoint();
-            n = w.write("\ndef");
+            w.pushAnchorPoint();   // Anchor at 8th char.
+            n = w.write("\ndef");   // Write "\n" plus 8 spaces plus "def".
             assert.strictEqual(n, 12, "correct number of chars written");
             n = w.write("\n");
-            assert.strictEqual(n, 9, "correct number of chars written");
-            n = w.write("ghi");
-            assert.strictEqual(n, 3, "correct number of chars written");
+            assert.strictEqual(n, 1, "correct number of chars written");
+            n = w.write("ghi");   // Write 8 spaces plus "ghi".
+            assert.strictEqual(n, 11, "correct number of chars written");
             w.popAnchorPoint();
             n = w.write("\nelse");
             w.popAnchorPoint();

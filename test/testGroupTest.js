@@ -6,6 +6,7 @@ var assert = require("assert"),
     path = require("path"),
     st = require("../lib/stRuntime"),
     w = require("../lib/autoIndentWriter"),
+    testIncludeIndent = require("./includeIndent_stg"),
     testTemplateGroup = require("./testGroup_stg");
 
 var spawn = require('child_process').spawn;
@@ -320,6 +321,43 @@ describe("test group test", function() {
             done();
         });
 
+    });
+
+    it("should generate the expected indentation for template includeIndent/main", function(done) {
+        var t,
+            data = {
+                title: "Title",
+                inputFields: [{name: "field 1"}, {name: "field 2"}, {name: "field 3"}]
+            },
+            group = st.loadGroup(testIncludeIndent),
+            writer = w.makeWriter();
+        
+        getSTReferenceOutput("includeIndent", "main", {data: data}, function(refOutput, errors) {
+            t = group.getTemplate("/main");
+            assert.notStrictEqual(t, null, "found a template");
+            t.setArgs({data: data});
+            t.write(writer);
+            assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
+            done();
+        });
+    });
+
+    it("should generate the expected indentation for template includeIndent/inputField", function(done) {
+        var t,
+            data = {
+                f: {name: 'field 1'}
+            },
+            group = st.loadGroup(testIncludeIndent),
+            writer = w.makeWriter();
+        
+        getSTReferenceOutput("includeIndent", "inputField", data, function(refOutput, errors) {
+            t = group.getTemplate("/inputField");
+            assert.notStrictEqual(t, null, "found a template");
+            t.setArgs(data);
+            t.write(writer);
+            assert.strictEqual(writer.toString(), refOutput, "got expected rendered text");
+            done();
+        });
     });
 
 });
