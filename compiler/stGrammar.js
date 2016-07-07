@@ -2658,7 +2658,7 @@ module.exports = (function() {
     }
 
     function peg$parseexprTag() {
-      var s0, s1, s2, s3, s4, s5, s6;
+      var s0, s1, s2, s3, s4, s5, s6, s7;
 
       s0 = peg$currPos;
       s1 = peg$parseSTART();
@@ -2676,11 +2676,17 @@ module.exports = (function() {
               if (peg$silentFails === 0) { peg$fail(peg$c80); }
             }
             if (s5 !== peg$FAILED) {
-              s6 = peg$parseexprOptions();
+              s6 = peg$parse__();
               if (s6 !== peg$FAILED) {
-                peg$savedPos = s4;
-                s5 = peg$c81(s3, s6);
-                s4 = s5;
+                s7 = peg$parseexprOptions();
+                if (s7 !== peg$FAILED) {
+                  peg$savedPos = s4;
+                  s5 = peg$c81(s3, s7);
+                  s4 = s5;
+                } else {
+                  peg$currPos = s4;
+                  s4 = peg$FAILED;
+                }
               } else {
                 peg$currPos = s4;
                 s4 = peg$FAILED;

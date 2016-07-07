@@ -456,7 +456,7 @@ compoundElement
     / region
 
 exprTag
-	= START __ e:expr opts:( ';' o:exprOptions { return o; } )? __ STOP {
+	= START __ e:expr opts:( ';' __ o:exprOptions { return o; } )? __ STOP {
 	        var ret = {
 	            type: "EXPR",
                 loc: getLocation(),
