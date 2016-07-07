@@ -831,6 +831,186 @@ describe("stGrammar", function() {
 
             assert.equal(parseGroup(text).message, 'Unterminated big string.');
         });
+
+        it("keyword 'separator' can have spaces before and after.", function () {
+            /* Before this test expression options like 'separator' in:
+             *     <data.items: item(); separator="\n">
+             * should be coded without spaces before 'separator', e.g.:
+             *     <data.items: item();separator="\n">
+             * This differs from the behavior of the StringTemplate reference implementation.
+             */
+            var text = 'main(data) ::= <<\nData:\n<data.items: item(); separator="\\n">\n>>\n'
+            + 'item(i) ::= <<\nItem: <i.name>\n>>\n';
+            var expected = {
+                "templates": {
+                    "/main": {
+                        "name": "main",
+                        "args": [
+                            {
+                                "type": "FORMAL_ARG",
+                                "loc": {
+                                    "line": 1,
+                                    "column": 6
+                                },
+                                "name": "data"
+                            }
+                        ],
+                        "template": [
+                            {
+                                "type": "TEXT",
+                                "loc": {
+                                    "line": 2,
+                                    "column": 1
+                                },
+                                "value": "Data:"
+                            },
+                            {
+                                "type": "NEWLINE",
+                                "loc": {
+                                    "line": 2,
+                                    "column": 6
+                                },
+                                "value": "\n"
+                            },
+                            {
+                                "type": "EXPR",
+                                "loc": {
+                                    "line": 3,
+                                    "column": 1
+                                },
+                                "expr": {
+                                    "type": "MAP",
+                                    "loc": {
+                                        "line": 3,
+                                        "column": 2
+                                    },
+                                    "expr": {
+                                        "type": "MEMBER_EXPR",
+                                        "loc": {
+                                            "line": 3,
+                                            "column": 2
+                                        },
+                                        "object": {
+                                            "type": "ATTRIBUTE",
+                                            "loc": {
+                                                "line": 3,
+                                                "column": 2
+                                            },
+                                            "name": "data"
+                                        },
+                                        "properties": [
+                                            {
+                                                "type": "PROP",
+                                                "loc": {
+                                                    "line": 3,
+                                                    "column": 6
+                                                },
+                                                "property": "items"
+                                            }
+                                        ]
+                                    },
+                                    "using": [
+                                        [
+                                            {
+                                                "type": "INCLUDE",
+                                                "loc": {
+                                                    "line": 3,
+                                                    "column": 14
+                                                },
+                                                "templateName": "item",
+                                                "args": [
+                                                    {
+                                                        "type": "STRING",
+                                                        "loc": {
+                                                            "line": 3,
+                                                            "column": 2
+                                                        },
+                                                        "value": ""
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    ]
+                                },
+                                "options": [
+                                    {
+                                        "name": "separator",
+                                        "value": {
+                                            "type": "STRING",
+                                            "loc": {
+                                                "line": 3,
+                                                "column": 32
+                                            },
+                                            "value": "\n"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "/item": {
+                        "name": "item",
+                        "args": [
+                            {
+                                "type": "FORMAL_ARG",
+                                "loc": {
+                                    "line": 5,
+                                    "column": 6
+                                },
+                                "name": "i"
+                            }
+                        ],
+                        "template": [
+                            {
+                                "type": "TEXT",
+                                "loc": {
+                                    "line": 6,
+                                    "column": 1
+                                },
+                                "value": "Item: "
+                            },
+                            {
+                                "type": "EXPR",
+                                "loc": {
+                                    "line": 6,
+                                    "column": 7
+                                },
+                                "expr": {
+                                    "type": "MEMBER_EXPR",
+                                    "loc": {
+                                        "line": 6,
+                                        "column": 8
+                                    },
+                                    "object": {
+                                        "type": "ATTRIBUTE",
+                                        "loc": {
+                                            "line": 6,
+                                            "column": 8
+                                        },
+                                        "name": "i"
+                                    },
+                                    "properties": [
+                                        {
+                                            "type": "PROP",
+                                            "loc": {
+                                                "line": 6,
+                                                "column": 9
+                                            },
+                                            "property": "name"
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                "aliases": {},
+                "imports": [],
+                "dictionaries": {}
+            };
+            var actual = parseGroup(text);
+            assert.deepEqual(actual, expected);
+        });
     });
 
     // xxx many more tests needed: aliases, escaping, all kinds of expressions

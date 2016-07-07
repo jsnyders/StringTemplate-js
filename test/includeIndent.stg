@@ -1,0 +1,22 @@
+delimiters "$","$"
+
+main(data) ::= <<
+<html>
+    <head>
+        <title>$data.title$</title>
+    </head>
+    <body>
+        <form>
+            $data.inputFields : inputField(); separator="\n"$
+        </form>
+    </body>
+</html>
+
+>>
+
+inputField(f) ::= <<
+<div>
+    $f.name$
+    <input type="text" id="$f.name$"></input><br />
+</div>
+>>

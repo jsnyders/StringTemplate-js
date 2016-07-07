@@ -4,6 +4,7 @@
     "description": "StringTemplate v4 for JavaScript",
     "keywords": ["Template, StringTemplate"],
     "main": "lib/stRuntime.js",
+    "typings": "lib/stringtemplate-js.d.ts",
     "repository": {
         "type": "git",
         "url": "https://github.com/jsnyders/StringTemplate-js"

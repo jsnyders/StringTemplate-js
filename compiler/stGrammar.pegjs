@@ -57,6 +57,27 @@
         }
     }
 
+    /**
+     * The parse() function was renamed peg$parse() in pegjs 0.9.0 .
+     */
+    function parse(arg1, args2, args3, args4, arg5) {
+      return peg$parse(arg1, args2, args3, args4, arg5);
+    }
+
+    /**
+     * This function exists in pegjs 0.8.0 but is missing in pegjs 0.9.0 .
+     */
+    function line() {
+      return peg$computePosDetails(peg$savedPos).line;
+    }
+
+    /**
+     * This function exists in pegjs 0.8.0 but is missing in pegjs 0.9.0 .
+     */
+    function column() {
+      return peg$computePosDetails(peg$savedPos).column;
+    }
+
     function getLocation() {
         return {
             line: line() + lineOffset,
@@ -210,7 +231,8 @@ templateDef
             s:STRING { return s.value; }
             / s:BIGSTRING { return s.value; }
             / s:BIGSTRING_NO_NL { return s.value; }
-            / { error("Missing template."); }
+            /* In pegjs 0.9.0 an action as first element of an alternative is not allowed.   */
+            / &{return true;} { error("Missing template."); }
         ) {
             if (def.enclosingTemplate) {
                 verboseLog("Region definition: " + def.enclosingTemplate + "." + def.name);
@@ -233,7 +255,8 @@ formalArgs
     = &{ formalArgsHasOptional = false; return true; } first:formalArg rest:( __ "," __ e:formalArg { return e; } )* {
             return makeList(first, rest);
         }
-    / { return []; }
+    /* In pegjs 0.9.0 an action as first element of an alternative is not allowed.   */
+    / &{return true;} { return []; }
 
 formalArg
     = name:ID defaultValue:( __ '=' __
@@ -339,7 +362,8 @@ templateFile
             s:STRING { return s.value; }
             / s:BIGSTRING { return s.value; }
             / s:BIGSTRING_NO_NL { return s.value; }
-            / { error("Missing template."); }
+            /* In pegjs 0.9.0 an action as first element of an alternative is not allowed.   */
+            / &{return true;} { error("Missing template."); }
         ) __ {
             if (name.value !== curGroup.fileName) {
                 error("Template name must match filename.");
@@ -432,7 +456,7 @@ compoundElement
     / region
 
 exprTag
-	= START __ e:expr opts:( ';' o:exprOptions { return o; } )? __ STOP {
+	= START __ e:expr opts:( ';' __ o:exprOptions { return o; } )? __ STOP {
 	        var ret = {
 	            type: "EXPR",
                 loc: getLocation(),
@@ -831,7 +855,8 @@ argExprList
                 value: makeList(first, rest)
             };
         }
-    / {
+    /* In pegjs 0.9.0 an action as first element of an alternative is not allowed.   */
+    / &{return true;} {
             return {
                 type: "ARGS",
                 value: []
@@ -862,7 +887,8 @@ list
 
 listElement
     = exprNoComma
-    / { return null; }
+    /* In pegjs 0.9.0 an action as first element of an alternative is not allowed.   */
+    / &{return true;} { return null; }
 
 /*
  * lexical terminals
@@ -931,12 +957,15 @@ STRING "string"
     = '"' chars:STRING_CHAR* '"' {
             return { type: "STRING", loc: getLocation(), value: chars.join("") };
         }
+    /* This conditions were in STRING_CHAR in grammar for pegjs 0.8.0,
+     * however pegjs 0.9.0 complains, correctly, about detection of a possible infinite loops.
+     */
+    / '"' chars:STRING_CHAR* EOL { error("Unterminated string."); }
+    / '"' chars:STRING_CHAR* EOF { error("Unterminated string."); }
 
 STRING_CHAR
     = !('"' / "\\" / "\r" / "\n") . { return text(); }
     / "\\" sequence:ESCAPE_CHAR { return sequence; }
-    / EOL { error("Unterminated string."); }
-    / EOF { error("Unterminated string."); }
 
 ESCAPE_CHAR
     = "n" { return "\n"; }
@@ -956,12 +985,15 @@ BIGSTRING "big string"
                 value: chars.join("")
             };
         }
+    /* This condition was in BIGSTRING_CHAR in grammar for pegjs 0.8.0,
+     * however pegjs 0.9.0 complains, correctly, about detection of a possible infinite loops.
+     */
+    / "<<" chars:BIGSTRING_CHAR* EOF { error("Unterminated big string."); }
 
 BIGSTRING_CHAR
     = !(">>" / "\\>>" / ">\\>") . { return text(); }
     / "\\>>" { return ">>"; }
     / ">\\>" { return ">>"; }
-    / EOF { error("Unterminated big string."); }
 
 // same as BIGSTRING but means ignore newlines later
 BIGSTRING_NO_NL "big string"
